@@ -4,6 +4,10 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#FBF6EF">
+<link rel="icon" type="image/png" sizes="32x32" href="icon-32.png">
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="manifest" href="manifest.json">
 <title>המטבח של עופרי ואופק</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -102,6 +106,21 @@ html[data-contrast="high"] .badge.vg{background:#fff; border:1px solid #5B6B2E;}
 }
 .fav[aria-pressed="true"]{color:var(--accent);}
 .empty{text-align:center; color:var(--muted); padding:3rem 1rem;}
+
+
+.card .thumb{
+  width:calc(100% + 1.8rem); margin:-.9rem -.9rem .1rem; aspect-ratio:3/2;
+  object-fit:cover; border-radius:15px 15px 0 0; display:block; background:var(--chip);
+}
+.heroimg{
+  width:calc(100% + 2rem); margin:0 -1rem; aspect-ratio:3/2; object-fit:cover;
+  display:block; background:var(--chip);
+}
+
+.ings .qty{border-bottom:2px dotted var(--accent); cursor:pointer; font-weight:700;}
+.conv{display:none; font-size:.85rem; color:var(--accent-dark); background:var(--chip); border-radius:8px; padding:.3rem .6rem; margin:.25rem 0;}
+.conv.open{display:block;}
+.hintline{font-size:.85rem; color:var(--muted); margin-top:.2rem;}
 
 /* ===== Bottom nav ===== */
 .bottomnav{
@@ -514,7 +533,79 @@ const RECIPES = [
   {t:'יוצקים לתבנית ומפזרים שומשום מעל.'},
   {t:'אופים 30-35 דקות עד שהלחם זהוב ויציב למגע.', timer:32},
   {t:'מצננים לגמרי לפני פריסה - פריסה חמה מפירקת אותו.'}],
- tip:'נשמר במקרר עד שבוע. פרוסה קלה בטוסטר מחזירה אותו לחיים.'}
+ tip:'נשמר במקרר עד שבוע. פרוסה קלה בטוסטר מחזירה אותו לחיים.'},
+{id:'chia', t:'פודינג צ׳יה במייפל ופירות', c:'b', min:10, serve:2, gf:1, vg:1,
+ d:'ארוחת בוקר שמחכה במקרר - חמש דקות ערבוב בערב, מוכן בבוקר.',
+ sub:'במקום סוכר - מייפל.',
+ ing:[[0.5,'כוס','זרעי צ׳יה'],[2,'כוסות','חלב שקדים או חלב קוקוס'],[2,'כפות','מייפל'],[0.5,'כפית','תמצית וניל'],[null,'','פירות ואגוזים להגשה']],
+ steps:[
+  {t:'מערבבים את הצ׳יה עם החלב, המייפל והווניל בקערה או בצנצנת.'},
+  {t:'מחכים 10 דקות ומערבבים שוב היטב - זה מה שמונע גושים.', timer:10},
+  {t:'מכסים ומקררים 4 שעות לפחות, ועדיף לילה.', timer:240},
+  {t:'מגישים עם פירות ואגוזים מעל.'}],
+ tip:'יצא סמיך מדי? מדללים במעט חלב לפני ההגשה.'},
+{id:'stirfry', t:'מוקפץ אטריות אורז וירקות', c:'m', min:25, serve:2, gf:1, vg:1,
+ d:'מוקפץ מהיר יותר ממשלוח - והסויה ללא גלוטן בלי שאף אחד שם לב.',
+ sub:'במקום רוטב סויה רגיל (מכיל חיטה) - טמארי ללא גלוטן. במקום סוכר ברוטב - סילאן.',
+ ing:[[200,'גרם','אטריות אורז'],[4,'כוסות','ירקות קצוצים (ברוקולי, גזר, פלפל)'],[3,'כפות','רוטב סויה ללא גלוטן (טמארי)'],[1,'כפית','ג׳ינג׳ר מגורר'],[2,'','שיני שום כתושות'],[1,'כף','שמן שומשום'],[1,'כפית','סילאן'],[null,'','שומשום ובצל ירוק לפיזור']],
+ steps:[
+  {t:'משרים את אטריות האורז במים חמים כ-10 דקות לפי ההוראות על האריזה, ומסננים.', timer:10},
+  {t:'מערבבים בקטנית: סויה, סילאן, ג׳ינג׳ר ושום.'},
+  {t:'מטגנים את הירקות בשמן שומשום 4-5 דקות על להבה גבוהה.', timer:5},
+  {t:'מוסיפים את האטריות והרוטב ומערבבים דקה-שתיים עד שהכול מצופה.'},
+  {t:'מגישים עם שומשום ובצל ירוק.'}],
+ tip:null},
+{id:'curry', t:'תבשיל עדשים ובטטה בקארי קוקוס', c:'m', min:35, serve:4, gf:1, vg:1,
+ d:'תבשיל סיר אחד קטיפתי שמשביע כמו ארוחה שלמה.',
+ sub:null,
+ ing:[[1,'כוס','עדשים ירוקות או כתומות'],[1,'','בטטה בקוביות'],[1,'','בצל קצוץ'],[2,'כפות','ממרח קארי'],[400,'מ״ל','חלב קוקוס (פחית)'],[2,'כוסות','ציר או מים'],[2,'כפות','שמן קוקוס'],[null,'','מלח'],[null,'','כוסברה להגשה (רשות)']],
+ steps:[
+  {t:'מזהיבים את הבצל בשמן קוקוס כ-5 דקות.', timer:5},
+  {t:'מוסיפים את ממרח הקארי ומטגנים 30 שניות לפתיחת הטעמים.'},
+  {t:'מוסיפים בטטה, עדשים, ציר וחלב קוקוס ומביאים לרתיחה.'},
+  {t:'מבשלים על להבה קטנה 25 דקות עד שהבטטה והעדשים רכות.', timer:25},
+  {t:'מתקנים מלח ומגישים עם כוסברה.'}],
+ tip:'מעולה גם מעל אורז, או כמו שהוא - כמרק סמיך ומשביע.'},
+{id:'slaw', t:'סלט כרוב וגזר בטחינה-סילאן', c:'s', min:15, serve:4, gf:1, vg:1,
+ d:'סלט פריך ומרענן עם רוטב ממכר - הכרוב רק משתבח עם הזמן.',
+ sub:'במקום סוכר ברוטב - סילאן.',
+ ing:[[0.5,'','כרוב לבן קצוץ דק'],[2,'','גזרים מגוררים'],[0.5,'כוס','טחינה גולמית'],[3,'כפות','מים'],[2,'כפות','סילאן'],[1,'','לימון סחוט'],[1,'כפית','כמון'],[null,'','מלח']],
+ steps:[
+  {t:'קוצצים את הכרוב דק ומגררים את הגזרים לקערה גדולה.'},
+  {t:'טורפים טחינה, מים, סילאן, לימון, כמון ומלח לרוטב חלק.'},
+  {t:'מערבבים הכול ונותנים 10 דקות לרוטב להיספג.', timer:10}],
+ tip:'מחזיק יומיים במקרר ורק משתבח - מתאים להכנה מראש.'},
+{id:'nicecream', t:'גלידת בננה וקקאו', c:'k', min:10, serve:2, gf:1, vg:1,
+ d:'גלידת שוקולד משתי בננות קפואות - בלי חלב, בלי סוכר, בלי מכונה.',
+ sub:'במקום סוכר - הבננות הבשלות (ומעט מייפל לחובבי מתוק).',
+ ing:[[3,'','בננות בשלות קפואות בפרוסות'],[2,'כפות','אבקת קקאו'],[2,'כפות','מייפל (רשות)'],[3,'כפות','חלב שקדים'],[null,'','קמצוץ מלח']],
+ steps:[
+  {t:'מקפיאים מראש בננות בשלות בפרוסות, 4 שעות לפחות.', timer:240},
+  {t:'טוחנים במעבד מזון עם הקקאו, החלב והמלח. עוצרים ומערבבים כמה פעמים עד למרקם גלידה חלק.'},
+  {t:'מגישים מיד כגלידה רכה, או מקפיאים שעה לכדורים יציבים.', timer:60}],
+ tip:'הבננה חייבת להיות בשלה מאוד - נקודות חומות זה הטעם.'},
+{id:'lemoncake', t:'עוגת לימון ושקדים במייפל', c:'k', min:50, serve:10, gf:1, vg:0,
+ d:'עוגת לימון מרעננת ולחה שמתאימה גם לקפה של בוקר.',
+ sub:'במקום קמח לבן - קמח שקדים. במקום סוכר - מייפל.',
+ ing:[[2,'כוסות','קמח שקדים'],[3,'','ביצים'],[0.5,'כוס','מייפל'],[0.33,'כוס','שמן קוקוס מומס'],[2,'','לימונים - מיץ וקליפה מגוררת'],[1,'כפית','אבקת אפייה'],[0.25,'כפית','מלח']],
+ steps:[
+  {t:'מחממים תנור ל-175 מעלות ומרפדים תבנית אינגליש קייק בנייר אפייה.'},
+  {t:'טורפים את הביצים עם המייפל, השמן, מיץ הלימון והקליפה המגוררת.'},
+  {t:'מוסיפים קמח שקדים, אבקת אפייה ומלח ומערבבים לבלילה אחידה.'},
+  {t:'אופים 35-40 דקות עד שהעוגה זהובה ויציבה למגע.', timer:37},
+  {t:'מצננים לגמרי לפני פריסה.'}],
+ tip:null},
+{id:'crackers', t:'קרקרי שקדים וזרעים', c:'p', min:30, serve:24, gf:1, vg:0,
+ d:'קרקרים פריכים לגבינה או חומוס - בלי קמח בכלל.',
+ sub:null,
+ ing:[[1.5,'כוסות','קמח שקדים'],[0.25,'כוס','זרעי פשתן טחונים'],[0.5,'כוס','זרעים מעורבים (שומשום, דלעת, חמניה)'],[1,'','ביצה'],[2,'כפות','שמן זית'],[0.5,'כפית','מלח'],[0.5,'כפית','אבקת שום (רשות)']],
+ steps:[
+  {t:'מחממים תנור ל-170 מעלות.'},
+  {t:'מערבבים את כל המצרכים לבצק אחיד.'},
+  {t:'פורסים דק בין שני ניירות אפייה ישירות על התבנית, ומסמנים ריבועים בסכין.'},
+  {t:'אופים 18-22 דקות עד זהוב.', timer:20},
+  {t:'מצננים לגמרי - הם מתקשים דווקא בצינון - ושוברים לריבועים.'}],
+ tip:'נשמר שבוע בקופסה אטומה.'}
 ];
 
 const FLOURS = [
@@ -564,6 +655,29 @@ function ingText(ing, scale){
   return [fq,u,name].filter(Boolean).join(' ');
 }
 function esc(s){const d=document.createElement('div');d.textContent=s;return d.innerHTML;}
+const DENS=[['קמח קפוטו',140],['קמח שקדים',96],['קמח שיבולת',90],['קמח טפיוקה',120],['שיבולת שועל',90],['אבקת קקאו',100],['קורנפלור',120],['שמן קוקוס',218],['מייפל',320],['סילאן',340],['טחינה',240],['שקדים טחונים',112],['קינואה',170],['עדשים',200],['חמאה',227],['שוקולד צ׳יפס',170],['זרעי צ׳יה',170]];
+function conversions(q,u,name){
+  const out=[]; const V={'כוס':240,'כוסות':240,'כף':15,'כפות':15,'כפית':5,'כפיות':5,'מ״ל':1,'מ"ל':1,'ליטר':1000};
+  if(u in V){
+    const ml=q*V[u];
+    if(u!=='כוס'&&u!=='כוסות') out.push(fmtQty(ml/240)+' כוסות');
+    if(u!=='כף'&&u!=='כפות') out.push(fmtQty(ml/15)+' כפות');
+    if(u!=='כפית'&&u!=='כפיות') out.push(fmtQty(ml/5)+' כפיות');
+    if(u!=='מ״ל'&&u!=='מ"ל'&&u!=='ליטר') out.push(Math.round(ml)+' מ״ל');
+    if(u==='ליטר') out.push(Math.round(ml)+' מ״ל');
+    if((u==='מ״ל'||u==='מ"ל') && ml>=1000) out.push(fmtQty(ml/1000)+' ליטר');
+  } else if(u==='גרם'){
+    if(q>=1000) out.push(fmtQty(q/1000)+' ק״ג');
+    const d=DENS.find(([k])=>name.includes(k));
+    if(d) out.push('≈ '+fmtQty(q/d[1])+' כוסות (הערכה)');
+  }
+  return out;
+}
+function ingHTML(ing,scale){
+  const [q,u,name]=ing;
+  if(q==null) return esc(name);
+  return `<span class="qty" title="לחצו להמרת יחידות">${esc(fmtQty(q*scale)+' '+u)}</span> ${esc(name)}`;
+}
 
 // ================= FILTER + RENDER =================
 function buildChips(){
@@ -595,6 +709,7 @@ function render(){
   grid.innerHTML = list.length ? list.map(r=>`
     <article class="card" role="button" tabindex="0" data-id="${r.id}" aria-label="${esc(r.t)}">
       <button class="fav" data-fav="${r.id}" aria-pressed="${favs.has(r.id)}" aria-label="שמירה למועדפים">${favs.has(r.id)?'❤️':'🤍'}</button>
+      <img class="thumb" src="${r.id}.jpg" alt="${esc(r.t)}" loading="lazy" onerror="this.style.display='none'">
       <h3>${esc(r.t)}</h3>
       <div class="meta"><span>${CATS[r.c]}</span><span>⏱ ${r.min} דקות</span></div>
       <div class="desc">${esc(r.d)}</div>
@@ -637,6 +752,7 @@ function drawSheet(){
   const sel = servings[r.id], scale = sel/r.serve;
   $('#sheetInner').innerHTML = `
     <button class="close" id="sheetClose" aria-label="סגירה">✕</button>
+    <img class="heroimg" src="${r.id}.jpg" alt="${esc(r.t)}" onerror="this.style.display='none'">
     <h1 id="sheetTitle">${esc(r.t)}</h1>
     <div class="meta"><span>📂 ${CATS[r.c]}</span><span>⏱ ${r.min} דקות</span>
       <button class="fav" style="position:static" data-fav="${r.id}" aria-pressed="${favs.has(r.id)}" aria-label="שמירה למועדפים">${favs.has(r.id)?'❤️':'🤍'}</button>
@@ -645,13 +761,14 @@ function drawSheet(){
     <p style="margin-top:.4rem;color:var(--muted)">${esc(r.d)}</p>
     ${r.sub?`<div class="subnote"><b>התאמה למטבח שלנו:</b> ${esc(r.sub)}</div>`:''}
     <h2 class="sec">מצרכים</h2>
+    <div class="hintline">טיפ: לחיצה על כמות מציגה המרה ליחידות אחרות ⚖️</div>
     <div class="servings">
       <button id="srvMinus" aria-label="פחות מנות">−</button>
       <span class="n">${sel} מנות</span>
       <button id="srvPlus" aria-label="יותר מנות">+</button>
     </div>
     <ul class="ings">
-      ${r.ing.map((g,i)=>`<li data-i="${i}"><span class="box" aria-hidden="true"></span><span class="txt">${esc(ingText(g,scale))}</span></li>`).join('')}
+      ${r.ing.map((g,i)=>{const cv=g[0]==null?[]:conversions(g[0]*scale,g[1],g[2]);return `<li data-i="${i}"><span class="box" aria-hidden="true"></span><span class="txt">${ingHTML(g,scale)}${cv.length?`<span class="conv">${esc(cv.join('  ·  '))}</span>`:''}</span></li>`;}).join('')}
     </ul>
     <button class="reset-ings" id="resetIngs">איפוס סימונים</button>
     <h2 class="sec">אופן ההכנה</h2>
@@ -667,6 +784,7 @@ function drawSheet(){
   $('#sheetInner .fav').onclick = ()=>toggleFav(r.id);
   $('#resetIngs').onclick = ()=>document.querySelectorAll('.ings li').forEach(li=>li.classList.remove('done'));
   document.querySelectorAll('.ings li').forEach(li=>li.onclick=()=>li.classList.toggle('done'));
+  document.querySelectorAll('.ings .qty').forEach(sp=>sp.onclick=e=>{e.stopPropagation(); sp.parentElement.querySelector('.conv')?.classList.toggle('open');});
   $('#startCook').onclick = startCook;
 }
 
@@ -811,4 +929,4 @@ renderGuide();
 render();
 </script>
 </body>
-  </html>
+</html>
