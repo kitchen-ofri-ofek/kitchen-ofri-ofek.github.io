@@ -4,10 +4,10 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#FBF6EF">
-<link rel="icon" type="image/png" sizes="32x32" href="icon-32.png">
-<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
-<link rel="apple-touch-icon" href="icon-180.png">
-<link rel="manifest" href="manifest.json">
+<link rel="icon" type="image/png" sizes="32x32" href="26-icon-32.png">
+<link rel="icon" type="image/png" sizes="192x192" href="28-icon-192.png">
+<link rel="apple-touch-icon" href="27-icon-180.png">
+<link rel="manifest" href="30-manifest.json">
 <title>המטבח של עופרי ואופק</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -329,6 +329,8 @@ html[data-contrast="high"] .subnote{background:#fff; border:2px solid var(--acce
 
 <footer>נבנה באהבה בשביל עופרי ואופק 🧡 בלי קמח חיטה, בלי סוכר לבן, בלי פשרות על הטעם.</footer>
 <script>
+const IMG={"chia": "1-chia.jpg", "curry": "2-curry.jpg", "almondbread": "3-almondbread.jpg", "brownies": "4-brownies.jpg", "chococake": "5-chococake.jpg", "cookies": "6-cookies.jpg", "dateballs": "7-dateballs.jpg", "granola": "8-granola.jpg", "lemoncake": "9-lemoncake.jpg", "lentils": "10-lentils.jpg", "lentilsalad": "11-lentilsalad.jpg", "malabi": "12-malabi.jpg", "mangosalad": "13-mangosalad.jpg", "muffins": "14-muffins.jpg", "nicecream": "15-nicecream.jpg", "omelette": "16-omelette.jpg", "pancakes": "17-pancakes.jpg", "pasta": "18-pasta.jpg", "patties": "19-patties.jpg", "pizza": "20-pizza.jpg", "quinoabowl": "21-quinoabowl.jpg", "schnitzel": "22-schnitzel.jpg", "slaw": "23-slaw.jpg", "stirfry": "24-stirfry.jpg", "crackers": "25-crackers.jpg"};
+
 // ================= DATA =================
 const CATS = {b:'בוקר', m:'עיקריות', s:'סלטים', k:'קינוחים', p:'מאפים'};
 // ingredient: [qty|null, unit, name]
@@ -709,7 +711,7 @@ function render(){
   grid.innerHTML = list.length ? list.map(r=>`
     <article class="card" role="button" tabindex="0" data-id="${r.id}" aria-label="${esc(r.t)}">
       <button class="fav" data-fav="${r.id}" aria-pressed="${favs.has(r.id)}" aria-label="שמירה למועדפים">${favs.has(r.id)?'❤️':'🤍'}</button>
-      <img class="thumb" src="${r.id}.jpg" alt="${esc(r.t)}" loading="lazy" onerror="this.style.display='none'">
+      <img class="thumb" src="${IMG[r.id]}" alt="${esc(r.t)}" loading="lazy" onerror="this.style.display='none'">
       <h3>${esc(r.t)}</h3>
       <div class="meta"><span>${CATS[r.c]}</span><span>⏱ ${r.min} דקות</span></div>
       <div class="desc">${esc(r.d)}</div>
@@ -752,7 +754,7 @@ function drawSheet(){
   const sel = servings[r.id], scale = sel/r.serve;
   $('#sheetInner').innerHTML = `
     <button class="close" id="sheetClose" aria-label="סגירה">✕</button>
-    <img class="heroimg" src="${r.id}.jpg" alt="${esc(r.t)}" onerror="this.style.display='none'">
+    <img class="heroimg" src="${IMG[r.id]}" alt="${esc(r.t)}" onerror="this.style.display='none'">
     <h1 id="sheetTitle">${esc(r.t)}</h1>
     <div class="meta"><span>📂 ${CATS[r.c]}</span><span>⏱ ${r.min} דקות</span>
       <button class="fav" style="position:static" data-fav="${r.id}" aria-pressed="${favs.has(r.id)}" aria-label="שמירה למועדפים">${favs.has(r.id)?'❤️':'🤍'}</button>
