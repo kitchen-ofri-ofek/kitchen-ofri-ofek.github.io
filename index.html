@@ -99,6 +99,7 @@ main{max-width:720px; margin:0 auto; padding:0 1rem;}
 .badge.gf{background:#E4F0E7; color:var(--good);}
 html[data-contrast="high"] .badge.gf{background:#fff; border:1px solid var(--good);}
 .badge.vg{background:#EDF0E4; color:#5B6B2E;}
+.badge.cut{background:#F7E3DC; color:var(--accent);}
 html[data-contrast="high"] .badge.vg{background:#fff; border:1px solid #5B6B2E;}
 .fav{
   position:absolute; top:.5rem; left:.5rem; min-width:44px; min-height:44px;
@@ -278,7 +279,7 @@ html[data-contrast="high"] .subnote{background:#fff; border:2px solid var(--acce
 <header class="topbar">
   <div class="brand">🥗 המטבח של עופרי ואופק</div>
   <div class="a11y">
-    <button id="impBtn" class="imp-cta" aria-label="ייבוא מתכון מקישור" title="ייבוא מתכון מקישור">🔗 יבא מתכון מקישור</button>
+    <button id="impBtn" class="imp-cta" aria-label="ייבוא מתכון מקישור" title="ייבוא מתכון מקישור">🔗 ייבוא מתכון מקישור</button>
   </div>
 </header>
 
@@ -377,7 +378,7 @@ const RECIPES = [
   {t:'מצננים לגמרי בתבנית - הגרנולה מתקשה דווקא בצינון. מוסיפים חמוציות ושומרים בצנצנת אטומה עד שבועיים.'}],
  tip:'רוצים חתיכות גדולות? מהדקים היטב לפני האפייה ולא מערבבים אחרי הצינון.'},
 {id:'omelette', t:'חביתת תרד ובולגרית', c:'b', min:15, serve:1, gf:1, vg:0,
- d:'ארוחת בוקר של 10 דקות עבודה: חביתה עבה, ירוקה ומשביעה.',
+ d:'ארוחת בוקר של 10 דקות עבודה: חביתה עבה, ירוקה ומשביעה - כ-20 גרם חלבון למנה.', cut:1,
  sub:null,
  ing:[[3,'','ביצים'],[2,'כוסות','עלי תרד קצוצים'],[0.5,'כוס','גבינה בולגרית מפוררת'],[1,'','שן שום כתושה'],[2,'כפות','שמן זית'],[null,'','מלח ופלפל שחור']],
  steps:[
@@ -625,7 +626,48 @@ const RECIPES = [
   {t:'פורסים דק בין שני ניירות אפייה ישירות על התבנית, ומסמנים ריבועים בסכין.'},
   {t:'אופים 18-22 דקות עד זהוב.', timer:20},
   {t:'מצננים לגמרי - הם מתקשים דווקא בצינון - ושוברים לריבועים.'}],
- tip:'נשמר שבוע בקופסה אטומה.'}
+ tip:'נשמר שבוע בקופסה אטומה.'},
+{id:'protein-omelet', t:'חביתת חלבון עם ירקות', c:'b', min:15, serve:1, gf:1, vg:0, cut:1,
+ d:'חביתת ענקית עם כ-30 גרם חלבון ומעט מאוד שומן - ארוחת חיטוב קלאסית שמשאירה שובע לאורך שעות.',
+ sub:null,
+ ing:[[4,'','חלבוני ביצים'],[1,'','ביצה שלמה'],[0.5,'','פלפל אדום קצוץ דק'],[0.5,'','בצל סגול קצוץ דק'],[1,'כוס','עלי תרד'],[2,'כפות','גבינה לבנה 5%'],[null,'','מלח ופלפל שחור'],[null,'','ספריי שמן למחבת']],
+ steps:[
+  {t:'קוצצים את הפלפל והבצל דק. מטריפים בקערה את החלבונים עם הביצה השלמה, מלח ופלפל.'},
+  {t:'מחממים מחבת נון-סטיק עם ספריי שמן ומטגנים את הירקות כשתי דקות.', timer:2},
+  {t:'מוסיפים את התרד, מערבבים חצי דקה, ויוצקים את תערובת הביצים.'},
+  {t:'מכסים ומבשלים על להבה נמוכה 3-4 דקות עד שהחביתה מתייצבת.', timer:4},
+  {t:'מורחים את הגבינה הלבנה על חצי מהחביתה, מקפלים ומגישים מיד.'}],
+ tip:'חלבונים נשרפים מהר - שומרים על להבה נמוכה ומכסים במקום להעלות אש.'},
+{id:'chicken-bites', t:'קוביות חזה עוף בתנור בציפוי שקדים', c:'m', min:30, serve:2, gf:1, vg:0, cut:1,
+ d:'כל הקרנץ\' של שניצל בלי טיגון ובלי פירורי לחם - כ-45 גרם חלבון למנה עם מינימום שומן.',
+ sub:'במקום פירורי לחם או קורנפלור - שקדים טחונים: פחות פחמימות ריקות, יותר חלבון ושומן טוב.',
+ ing:[[500,'גרם','חזה עוף בקוביות גדולות'],[1,'','ביצה טרופה'],[0.75,'כוס','שקדים טחונים דק'],[1,'כפית','פפריקה מתוקה'],[0.5,'כפית','אבקת שום'],[0.5,'כפית','מלח'],[null,'','פלפל שחור'],[null,'','ספריי שמן']],
+ steps:[
+  {t:'מחממים תנור ל-200 מעלות ומרפדים תבנית בנייר אפייה.'},
+  {t:'מערבבים בצלחת שטוחה את השקדים הטחונים עם הפפריקה, אבקת השום, מלח ופלפל.'},
+  {t:'טובלים כל קוביית עוף בביצה הטרופה ואז בציפוי השקדים, וסודרים בתבנית במרווחים.'},
+  {t:'מרססים ספריי שמן קל מעל ואופים 18-20 דקות, הופכים באמצע, עד להזהבה.', timer:20}],
+ tip:'הופכים באמצע האפייה - זה מה שנותן ציפוי שווה משני הצדדים.'},
+{id:'tuna-quinoa', t:'סלט טונה וקינואה', c:'s', min:25, serve:2, gf:1, vg:0, cut:1,
+ d:'כ-35 גרם חלבון למנה עם קינואה מלאה - ארוחת צהריים שלמה בלי פחמימות ריקות.',
+ sub:'במקום רוטב מיונז כבד - לימון, כף שמן זית אחת ופטרוזיליה. הטונה במים, לא בשמן.',
+ ing:[[1,'כוס','קינואה'],[2,'כוסות','מים'],[2,'','פחיות טונה במים, מסוננת היטב'],[1,'','מלפפון בקוביות'],[1,'','פלפל אדום בקוביות'],[0.25,'כוס','גרעיני תירס (רשות)'],[1,'','לימון סחוט'],[1,'כף','שמן זית'],[null,'','מלח ופלפל שחור'],[null,'','חופן פטרוזיליה קצוצה']],
+ steps:[
+  {t:'שוטפים את הקינואה ומבשלים עם המים 15 דקות עד שהגרעינים נפתחים ושקופים.', timer:15},
+  {t:'מצננים את הקינואה לגמרי - ככה היא לא הורסת את הסלט.'},
+  {t:'קוצצים את הירקות לקוביות קטנות ומערבבים בקערה גדולה עם הקינואה המצוננת.'},
+  {t:'מפוררים פנימה את הטונה, מוסיפים לימון, שמן זית, מלח ופלפל ומערבבים בעדינות.'},
+  {t:'מפזרים פטרוזיליה מעל ומגישים קר או בטמפרטורת החדר.'}],
+ tip:'אפשר להכין כפול ולשמור בקירור יומיים - הטעמים רק משתבחים.'},
+{id:'yogurt-bowl', t:'קערת יוגורט יווני עם פירות וגרנולה', c:'b', min:10, serve:1, gf:1, vg:0, cut:1,
+ d:'כ-25 גרם חלבון בלי בישול בכלל - ארוחת בוקר או אחרי אימון מוכנה ב-5 דקות.',
+ sub:'במקום גרנולה קנויה עם סוכר לבן - הגרנולה הביתית שלנו עם מייפל (המתכון באתר).',
+ ing:[[250,'גרם','יוגורט יווני טבעי 0%'],[0.5,'כוס','פירות יער (טריים או קפואים)'],[2,'כפות','גרנולה ביתית'],[1,'כף','זרעי צ׳יה'],[1,'כפית','סילאן או מייפל (רשות)']],
+ steps:[
+  {t:'מוזגים חצי מהיוגורט לקערה או כוס גבוהה.'},
+  {t:'מסדרים שכבת פירות ושכבת גרנולה, ומעל שאר היוגורט.'},
+  {t:'מפזרים מעל צ\'יה ועוד קצת גרנולה, ומוסיפים סילאן אם בא מתוק יותר.'}],
+ tip:'אם היוגורט חמוץ מדי בשבילכם, הכפית סילאן מאזנת בלי טיפת סוכר לבן.'}
 ];
 
 const FLOURS = [
@@ -650,7 +692,7 @@ const TIPS = [
 ];
 
 // ================= STATE =================
-let state = {cat:'all', fast:false, gfOnly:false, vgOnly:false, favOnly:false, q:''};
+let state = {cat:'all', fast:false, gfOnly:false, vgOnly:false, favOnly:false, cutOnly:false, q:''};
 let favs = new Set(JSON.parse(localStorage.getItem('rcp-favs')||'[]'));
 let custom = JSON.parse(localStorage.getItem('rcp-custom')||'[]');
 RECIPES.push(...custom);
@@ -678,29 +720,39 @@ function ingText(ing, scale){
   return [fq,u,name].filter(Boolean).join(' ');
 }
 function esc(s){const d=document.createElement('div');d.textContent=s;return d.innerHTML;}
-const DENS=[['קמח קפוטו',140],['קמח שקדים',96],['קמח שיבולת',90],['קמח טפיוקה',120],['שיבולת שועל',90],['אבקת קקאו',100],['קורנפלור',120],['שמן קוקוס',218],['מייפל',320],['סילאן',340],['טחינה',240],['שקדים טחונים',112],['קינואה',170],['עדשים',200],['חמאה',227],['שוקולד צ׳יפס',170],['זרעי צ׳יה',170]];
+const DENS=[['קמח קפוטו',140],['קמח שקדים',96],['קמח שיבולת',90],['קמח טפיוקה',120],['שיבולת שועל',90],['אבקת קקאו',100],['קורנפלור',120],['אבקת אפייה',220],['סודה לשתייה',230],['קינמון',125],['שמן קוקוס',218],['שמן זית',216],['שמן שומשום',216],['שמן',216],['מייפל',320],['סילאן',340],['דבש',340],['טחינה',240],['חמאת',258],['חלב שקדים',245],['חלב קוקוס',240],['חלב',245],['מים',240],['ציר',240],['רוטב סויה',255],['טמארי',255],['חומץ',240],['שקדים טחונים',112],['אגוזי מלך',115],['אגוזי',120],['שקדים',140],['שומשום',145],['זרעי צ׳יה',170],['זרעי',160],['קינואה',170],['עדשים',200],['חמאה',227],['שוקולד צ׳יפס',170],['תמרים',280],['מלח',290],['קמח',130]];
 function conversions(q,u,name){
-  const out=[]; const V={'כוס':240,'כוסות':240,'כף':15,'כפות':15,'כפית':5,'כפיות':5,'מ״ל':1,'מ"ל':1,'ליטר':1000};
+  const V={'כוס':240,'כוסות':240,'כף':15,'כפות':15,'כפית':5,'כפיות':5,'מ״ל':1,'מ"ל':1,'ליטר':1000};
+  const out=[];
+  const d=DENS.find(([k])=>name.includes(k));
   if(u in V){
     const ml=q*V[u];
-    if(u!=='כוס'&&u!=='כוסות') out.push(fmtQty(ml/240)+' כוסות');
-    if(u!=='כף'&&u!=='כפות') out.push(fmtQty(ml/15)+' כפות');
-    if(u!=='כפית'&&u!=='כפיות') out.push(fmtQty(ml/5)+' כפיות');
-    if(u!=='מ״ל'&&u!=='מ"ל'&&u!=='ליטר') out.push(Math.round(ml)+' מ״ל');
-    if(u==='ליטר') out.push(Math.round(ml)+' מ״ל');
-    if((u==='מ״ל'||u==='מ"ל') && ml>=1000) out.push(fmtQty(ml/1000)+' ליטר');
-  } else if(u==='גרם'){
-    if(q>=1000) out.push(fmtQty(q/1000)+' ק״ג');
-    const d=DENS.find(([k])=>name.includes(k));
-    if(d) out.push('≈ '+fmtQty(q/d[1])+' כוסות (הערכה)');
+    if(d) out.push('≈ '+Math.round(ml/240*d[1])+' גרם');
+    const cups=ml/240, tb=ml/15, ts=ml/5;
+    if(u!=='כוס'&&u!=='כוסות'&&cups>=0.25) out.push(fmtQty(cups)+' כוסות');
+    if(u!=='כף'&&u!=='כפות'&&tb>=1&&tb<=16) out.push(fmtQty(tb)+' כפות');
+    if(u!=='כפית'&&u!=='כפיות'&&ts>=1&&ts<=12) out.push(fmtQty(ts)+' כפיות');
+    if(u==='כוס'||u==='כוסות'||u==='ליטר') out.push(Math.round(ml)+' מ״ל');
+    if(ml>=1000&&u!=='ליטר') out.push(fmtQty(ml/1000)+' ליטר');
+  } else if(u==='גרם'||u==='ק״ג'||u==='ק"ג'){
+    const g=(u==='גרם')?q:q*1000;
+    if(g>=1000&&u==='גרם') out.push(fmtQty(g/1000)+' ק״ג');
+    if(g<1000&&u!=='גרם') out.push(Math.round(g)+' גרם');
+    if(d){
+      const cups=g/d[1];
+      if(cups>=0.25) out.push('≈ '+fmtQty(cups)+' כוסות');
+      const tb=cups*16;
+      if(tb>=1&&tb<=16) out.push('≈ '+fmtQty(tb)+' כפות');
+    }
   }
   return out;
 }
 function ingHTML(ing,scale,cv){
   const [q,u,name]=ing;
   if(q==null) return esc(name);
-  const attr=cv&&cv.length?` data-cv="${esc(cv.join(' · '))}"`:'';
-  return `<span class="qty"${attr} title="לחיצה ארוכה להמרת יחידות">${esc(fmtQty(q*scale)+' '+u)}</span> ${esc(name)}`;
+  const has=cv&&cv.length;
+  const attr=has?` data-cv="${esc(cv.join(' · '))}" title="לחיצה ארוכה להמרת יחידות"`:'';
+  return `<span class="qty"${attr}>${esc(fmtQty(q*scale)+' '+u)}</span> ${esc(name)}`;
 }
 
 // ================= LONG-PRESS CONVERSION POPUP =================
@@ -742,7 +794,7 @@ function buildChips(){
   $('#catChips').innerHTML = cats.map(([k,l])=>
     `<button class="chip" data-cat="${k}" aria-pressed="${state.cat===k}">${l}</button>`).join('');
   $('#tagChips').innerHTML = [
-    ['fast','⚡ עד 30 דקות'],['gfOnly','ללא גלוטן'],['vgOnly','טבעוני'],['favOnly','❤️ מועדפים']
+    ['fast','⚡ עד 30 דקות'],['gfOnly','ללא גלוטן'],['vgOnly','טבעוני'],['cutOnly','💪 חיטוב'],['favOnly','❤️ מועדפים']
   ].map(([k,l])=>`<button class="chip" data-tag="${k}" aria-pressed="${state[k]}">${l}</button>`).join('');
   document.querySelectorAll('[data-cat]').forEach(b=>b.onclick=()=>{state.cat=b.dataset.cat;render();});
   document.querySelectorAll('[data-tag]').forEach(b=>b.onclick=()=>{state[b.dataset.tag]=!state[b.dataset.tag];render();});
@@ -752,6 +804,7 @@ function matches(r){
   if(state.fast && r.min>30) return false;
   if(state.gfOnly && !r.gf) return false;
   if(state.vgOnly && !r.vg) return false;
+  if(state.cutOnly && !r.cut) return false;
   if(state.favOnly && !favs.has(r.id)) return false;
   if(state.q){
     const hay = (r.t+' '+r.d+' '+r.ing.map(i=>i[2]).join(' ')).toLowerCase();
@@ -770,7 +823,7 @@ function render(){
       <h3>${esc(r.t)}</h3>
       <div class="meta"><span>${CATS[r.c]}</span><span>⏱ ${r.min} דקות</span></div>
       <div class="desc">${esc(r.d)}</div>
-      <div>${r.gf?'<span class="badge gf">ללא גלוטן</span>':''}${r.vg?'<span class="badge vg">טבעוני</span>':''}${r.imported?'<span class="badge imp">מיובא 🔗</span>':''}</div>
+      <div>${r.gf?'<span class="badge gf">ללא גלוטן</span>':''}${r.vg?'<span class="badge vg">טבעוני</span>':''}${r.cut?'<span class="badge cut">💪 חיטוב</span>':''}${r.imported?'<span class="badge imp">מיובא 🔗</span>':''}</div>
     </article>`).join('')
    : `<div class="empty">לא נמצאו מתכונים שמתאימים לסינון.<br>נסו לבטל חלק מהסינונים 🙂</div>`;
   grid.querySelectorAll('.card').forEach(c=>{
