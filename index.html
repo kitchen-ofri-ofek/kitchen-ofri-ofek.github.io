@@ -257,6 +257,18 @@ html[data-contrast="high"] .subnote{background:#fff; border:2px solid var(--acce
 .cook-ings li{padding:.25rem 0; color:var(--muted);}
 
 @media (prefers-reduced-motion:reduce){*{transition:none!important; animation:none!important;}}
+.convpop{position:fixed; z-index:500; background:var(--card); border:1.5px solid var(--accent); border-radius:12px; box-shadow:0 8px 24px rgba(60,30,10,.25); padding:.55rem .9rem; font-size:.9rem; line-height:1.6; max-width:78vw; pointer-events:none;}
+.convpop b{display:block; margin-bottom:.15rem; color:var(--accent-dark); font-size:.85rem;}
+.badge.imp{background:#E8E0F4; color:#5A3E8C;}
+.impform input{width:100%; padding:.7rem; border:1.5px solid var(--accent); border-radius:10px; font-size:1rem; margin:.6rem 0; box-sizing:border-box;}
+.impform button.go{background:var(--accent); color:#fff; border:none; border-radius:10px; padding:.7rem 1.4rem; font-size:1rem; font-weight:700; width:100%; cursor:pointer;}
+.impstatus{margin:.6rem 0; font-weight:600;}
+.imperr{color:#b00;}
+.impflagrow{background:#FDECEA; border-radius:8px;}
+.impsug{display:block; color:#b00; font-size:.78rem; font-weight:600;}
+.impcats{display:flex; gap:.4rem; flex-wrap:wrap; margin:.5rem 0;}
+.impcats button{border:1.5px solid var(--accent); background:transparent; border-radius:999px; padding:.3rem .8rem; cursor:pointer;}
+.impcats button.sel{background:var(--accent); color:#fff;}
 </style>
 </head>
 <body>
@@ -265,6 +277,7 @@ html[data-contrast="high"] .subnote{background:#fff; border:2px solid var(--acce
   <div class="brand">🥗 המטבח של עופרי ואופק</div>
   <div class="a11y">
     <button id="fsBtn" aria-label="הגדלת טקסט" title="הגדלת טקסט">א+</button>
+    <button id="impBtn" aria-label="ייבוא מתכון מקישור" title="ייבוא מתכון מקישור">🔗</button>
     <button id="hcBtn" aria-label="ניגודיות גבוהה" aria-pressed="false" title="ניגודיות גבוהה">◐</button>
   </div>
 </header>
@@ -307,6 +320,11 @@ html[data-contrast="high"] .subnote{background:#fff; border:2px solid var(--acce
 <!-- Recipe sheet -->
 <div class="sheet" id="sheet" role="dialog" aria-modal="true" aria-labelledby="sheetTitle">
   <div class="sheet-inner" id="sheetInner"></div>
+</div>
+
+<!-- Import sheet -->
+<div class="sheet" id="impSheet" role="dialog" aria-modal="true" aria-labelledby="impTitle">
+  <div class="sheet-inner" id="impInner"></div>
 </div>
 
 <!-- Cook mode -->
@@ -634,6 +652,9 @@ const TIPS = [
 // ================= STATE =================
 let state = {cat:'all', fast:false, gfOnly:false, vgOnly:false, favOnly:false, q:''};
 let favs = new Set(JSON.parse(localStorage.getItem('rcp-favs')||'[]'));
+let custom = JSON.parse(localStorage.getItem('rcp-custom')||'[]');
+RECIPES.push(...custom);
+function saveCustom(){localStorage.setItem('rcp-custom',JSON.stringify(custom));}
 let servings = {};
 let current = null, stepIdx = 0, wakeLock = null;
 
@@ -675,11 +696,37 @@ function conversions(q,u,name){
   }
   return out;
 }
-function ingHTML(ing,scale){
+function ingHTML(ing,scale,cv){
   const [q,u,name]=ing;
   if(q==null) return esc(name);
-  return `<span class="qty" title="לחצו להמרת יחידות">${esc(fmtQty(q*scale)+' '+u)}</span> ${esc(name)}`;
+  const attr=cv&&cv.length?` data-cv="${esc(cv.join(' · '))}"`:'';
+  return `<span class="qty"${attr} title="לחיצה ארוכה להמרת יחידות">${esc(fmtQty(q*scale)+' '+u)}</span> ${esc(name)}`;
 }
+
+// ================= LONG-PRESS CONVERSION POPUP =================
+function showConvPop(sp){
+  const cv=sp.dataset.cv; if(!cv) return;
+  hideConvPop();
+  const pop=document.createElement('div');
+  pop.className='convpop'; pop.id='convpop';
+  pop.innerHTML=`<b>המרת יחידות ⚖️</b>${cv.split(' · ').map(esc).join('<br>')}`;
+  document.body.appendChild(pop);
+  const r=sp.getBoundingClientRect();
+  pop.style.left=Math.max(8,Math.min(window.innerWidth-pop.offsetWidth-8,r.left))+'px';
+  pop.style.top=Math.max(8,r.top-pop.offsetHeight-8)+'px';
+}
+function hideConvPop(){const p=document.getElementById('convpop'); if(p)p.remove();}
+let lpTimer=null;
+document.addEventListener('pointerdown',e=>{
+  const sp=e.target.closest('.qty');
+  if(!sp){hideConvPop();return;}
+  lpTimer=setTimeout(()=>showConvPop(sp),450);
+  const cancel=()=>clearTimeout(lpTimer);
+  sp.addEventListener('pointerup',cancel,{once:true});
+  sp.addEventListener('pointerleave',cancel,{once:true});
+  sp.addEventListener('pointermove',cancel,{once:true});
+},true);
+document.addEventListener('scroll',hideConvPop,true);
 
 // ================= FILTER + RENDER =================
 function buildChips(){
@@ -711,11 +758,11 @@ function render(){
   grid.innerHTML = list.length ? list.map(r=>`
     <article class="card" role="button" tabindex="0" data-id="${r.id}" aria-label="${esc(r.t)}">
       <button class="fav" data-fav="${r.id}" aria-pressed="${favs.has(r.id)}" aria-label="שמירה למועדפים">${favs.has(r.id)?'❤️':'🤍'}</button>
-      <img class="thumb" src="${IMG[r.id]}" alt="${esc(r.t)}" loading="lazy" onerror="this.style.display='none'">
+      <img class="thumb" src="${r.img||IMG[r.id]||''}" alt="${esc(r.t)}" loading="lazy" onerror="this.style.display='none'">
       <h3>${esc(r.t)}</h3>
       <div class="meta"><span>${CATS[r.c]}</span><span>⏱ ${r.min} דקות</span></div>
       <div class="desc">${esc(r.d)}</div>
-      <div>${r.gf?'<span class="badge gf">ללא גלוטן</span>':''}${r.vg?'<span class="badge vg">טבעוני</span>':''}</div>
+      <div>${r.gf?'<span class="badge gf">ללא גלוטן</span>':''}${r.vg?'<span class="badge vg">טבעוני</span>':''}${r.imported?'<span class="badge imp">מיובא 🔗</span>':''}</div>
     </article>`).join('')
    : `<div class="empty">לא נמצאו מתכונים שמתאימים לסינון.<br>נסו לבטל חלק מהסינונים 🙂</div>`;
   grid.querySelectorAll('.card').forEach(c=>{
@@ -754,7 +801,7 @@ function drawSheet(){
   const sel = servings[r.id], scale = sel/r.serve;
   $('#sheetInner').innerHTML = `
     <button class="close" id="sheetClose" aria-label="סגירה">✕</button>
-    <img class="heroimg" src="${IMG[r.id]}" alt="${esc(r.t)}" onerror="this.style.display='none'">
+    <img class="heroimg" src="${r.img||IMG[r.id]||''}" alt="${esc(r.t)}" onerror="this.style.display='none'">
     <h1 id="sheetTitle">${esc(r.t)}</h1>
     <div class="meta"><span>📂 ${CATS[r.c]}</span><span>⏱ ${r.min} דקות</span>
       <button class="fav" style="position:static" data-fav="${r.id}" aria-pressed="${favs.has(r.id)}" aria-label="שמירה למועדפים">${favs.has(r.id)?'❤️':'🤍'}</button>
@@ -763,14 +810,14 @@ function drawSheet(){
     <p style="margin-top:.4rem;color:var(--muted)">${esc(r.d)}</p>
     ${r.sub?`<div class="subnote"><b>התאמה למטבח שלנו:</b> ${esc(r.sub)}</div>`:''}
     <h2 class="sec">מצרכים</h2>
-    <div class="hintline">טיפ: לחיצה על כמות מציגה המרה ליחידות אחרות ⚖️</div>
+    <div class="hintline">טיפ: לחיצה ארוכה על כמות מציגה המרה ליחידות אחרות ⚖️</div>
     <div class="servings">
       <button id="srvMinus" aria-label="פחות מנות">−</button>
       <span class="n">${sel} מנות</span>
       <button id="srvPlus" aria-label="יותר מנות">+</button>
     </div>
     <ul class="ings">
-      ${r.ing.map((g,i)=>{const cv=g[0]==null?[]:conversions(g[0]*scale,g[1],g[2]);return `<li data-i="${i}"><span class="box" aria-hidden="true"></span><span class="txt">${ingHTML(g,scale)}${cv.length?`<span class="conv">${esc(cv.join('  ·  '))}</span>`:''}</span></li>`;}).join('')}
+      ${r.ing.map((g,i)=>{const cv=g[0]==null?[]:conversions(g[0]*scale,g[1],g[2]);return `<li data-i="${i}"><span class="box" aria-hidden="true"></span><span class="txt">${ingHTML(g,scale,cv)}</span></li>`;}).join('')}
     </ul>
     <button class="reset-ings" id="resetIngs">איפוס סימונים</button>
     <h2 class="sec">אופן ההכנה</h2>
@@ -779,15 +826,17 @@ function drawSheet(){
     </ol>
     ${r.tip?`<div class="tip">💡 ${esc(r.tip)}</div>`:''}
     <button class="cook-cta" id="startCook">👨‍🍳 מצב בישול - צעד אחר צעד</button>
+    ${r.imported?`<button class="reset-ings" id="delImp" style="color:#b00">מחיקת מתכון מיובא 🗑</button>`:''}
   `;
   $('#sheetClose').onclick = closeSheet;
   $('#srvMinus').onclick = ()=>{ if(servings[r.id]>1){servings[r.id]--; drawSheet();} };
   $('#srvPlus').onclick = ()=>{ if(servings[r.id]<24){servings[r.id]++; drawSheet();} };
   $('#sheetInner .fav').onclick = ()=>toggleFav(r.id);
   $('#resetIngs').onclick = ()=>document.querySelectorAll('.ings li').forEach(li=>li.classList.remove('done'));
-  document.querySelectorAll('.ings li').forEach(li=>li.onclick=()=>li.classList.toggle('done'));
-  document.querySelectorAll('.ings .qty').forEach(sp=>sp.onclick=e=>{e.stopPropagation(); sp.parentElement.querySelector('.conv')?.classList.toggle('open');});
+  document.querySelectorAll('.ings li').forEach(li=>li.onclick=e=>{if(e.target.closest('.qty'))return; li.classList.toggle('done')});
   $('#startCook').onclick = startCook;
+  const delBtn=$('#delImp');
+  if(delBtn) delBtn.onclick=()=>{ custom=custom.filter(x=>x.id!==r.id); const ix=RECIPES.findIndex(x=>x.id===r.id); if(ix>=0)RECIPES.splice(ix,1); saveCustom(); closeSheet(); render(); };
 }
 
 // ================= COOK MODE =================
@@ -876,6 +925,88 @@ $('#cookNext').onclick = ()=>{
 $('#cookClose').onclick = closeCook;
 
 // ================= GUIDE =================
+// ================= IMPORT FROM LINK =================
+const IMPORT_API='https://recipes-import-api.mqog1v.workers.dev/import?url=';
+function dietCheck(t){
+  const flourOK=/קפוטו|שקדים|שיבולת|כוסמין|תירס|אורז|קוקוס|חומוס|טפיוקה|תפוחי אדמה|גלוטן|קינואה|בוקוויט|אגוזים|זרעים/;
+  if(/קמח/.test(t)&&!flourOK.test(t)) return 'קמח חיטה ← קמח קפוטו ללא גלוטן או קמח שקדים';
+  if(/סוכר/.test(t)&&!/קוקוס/.test(t)) return 'סוכר ← מייפל או סילאן (כ־⅔ מהכמות)';
+  return null;
+}
+function openImport(){
+  hideConvPop();
+  $('#impInner').innerHTML=`
+    <button class="close" id="impClose" aria-label="סגירה">✕</button>
+    <h1 id="impTitle">ייבוא מתכון מקישור 🔗</h1>
+    <p style="color:var(--muted)">מדביקים קישור לעמוד מתכון ואנחנו מושכים את הכותרת, התמונה, המצרכים והשלבים. מתכונים שלא מתאימים לכללי המטבח (קמח חיטה / סוכר לבן) מסומנים באדום עם תחליף מומלץ.</p>
+    <div class="impform">
+      <input id="impUrl" type="url" inputmode="url" dir="ltr" placeholder="https://www.mako.co.il/food-recipes/..." aria-label="קישור למתכון">
+      <button class="go" id="impGo">ייבאו את המתכון</button>
+    </div>
+    <div class="impstatus" id="impStatus" aria-live="polite"></div>
+    <div id="impPreview"></div>`;
+  $('#impSheet').classList.add('open');
+  document.body.style.overflow='hidden';
+  $('#impClose').onclick=closeImport;
+  $('#impGo').onclick=runImport;
+  $('#impUrl').focus();
+}
+function closeImport(){ $('#impSheet').classList.remove('open'); document.body.style.overflow=''; }
+async function runImport(){
+  const url=$('#impUrl').value.trim();
+  const st=$('#impStatus'), pv=$('#impPreview');
+  pv.innerHTML='';
+  if(!/^https?:\/\/.+\..+/.test(url)){ st.innerHTML='<span class="imperr">הקישור לא נראה תקין 🤔</span>'; return; }
+  st.textContent='שולפים את המתכון… ⏳';
+  try{
+    const ctl=new AbortController(); const to=setTimeout(()=>ctl.abort(),25000);
+    const resp=await fetch(IMPORT_API+encodeURIComponent(url),{signal:ctl.signal});
+    clearTimeout(to);
+    const d=await resp.json();
+    if(!d.ok){
+      const msgs={
+        login_wall:'הקישור דורש התחברות (פוסטים בפייסבוק ואינסטגרם נעולים לאורחים) - כרגע אי אפשר לייבא אוטומטית. נסו קישור מאתר מתכונים פתוח.',
+        no_recipe_found:'לא מצאנו מתכון מובנה בעמוד הזה. נסו קישור ישיר לעמוד של מתכון.',
+        partial_recipe:'מצאנו מתכון אבל חסרים בו מצרכים או שלבים, אז לא ייבאנו.',
+        not_html:'הקישור לא מצביע על עמוד אינטרנט רגיל.',
+        fetch_failed:'לא הצלחנו לפתוח את הקישור (האתר חסם או לא זמין). נסו אתר אחר.',
+        bad_url:'הקישור לא נראה תקין 🤔'};
+      st.innerHTML=`<span class="imperr">${msgs[d.reason]||msgs.fetch_failed}</span>`;
+      return;
+    }
+    const r=d.recipe;
+    const flags=r.ingredients.map(t=>dietCheck(t));
+    const flagged=flags.filter(Boolean);
+    const uniqSugs=[...new Set(flagged)];
+    let selCat='m';
+    pv.innerHTML=`
+      ${r.image?`<img class="heroimg" src="${esc(r.image)}" alt="" onerror="this.style.display='none'">`:''}
+      <h2>${esc(r.title)}</h2>
+      <div class="meta"><span>⏱ ${r.minutes||'לא צוין'} דקות</span><span>מקור: ${esc(r.sourceHost)}</span></div>
+      <h3 class="sec">קטגוריה</h3>
+      <div class="impcats" id="impCats">${Object.entries(CATS).map(([k,l])=>`<button data-k="${k}" class="${k==='m'?'sel':''}">${l}</button>`).join('')}</div>
+      <h3 class="sec">מצרכים (${r.ingredients.length})</h3>
+      <ul class="ings">
+        ${r.ingredients.map((t,i)=>`<li class="${flags[i]?'impflagrow':''}"><span class="txt">${esc(t)}${flags[i]?`<span class="impsug">⚠️ ${esc(flags[i])}</span>`:''}</span></li>`).join('')}
+      </ul>
+      <h3 class="sec">אופן ההכנה (${r.steps.length} שלבים)</h3>
+      <ol class="steps">${r.steps.map(t=>`<li>${esc(t)}</li>`).join('')}</ol>
+      ${flagged.length?`<div class="subnote"><b>שימו לב:</b> המתכון המקורי לא לגמרי מתאים לכללי המטבח. התחליפים המומלצים מסומנים למעלה באדום.</div>`:''}
+      <button class="cook-cta" id="impAdd">✅ הוספה למתכונים שלנו</button>`;
+    pv.querySelectorAll('#impCats button').forEach(b=>b.onclick=()=>{ selCat=b.dataset.k; pv.querySelectorAll('#impCats button').forEach(x=>x.classList.toggle('sel',x===b)); });
+    $('#impAdd').onclick=()=>{
+      const nr={id:'imp-'+Date.now(), t:r.title, d:r.description||'מתכון שיובא מקישור', c:selCat, min:r.minutes||30, serve:r.servings||4,
+        gf:false, vg:false, ing:r.ingredients.map(t=>[null,null,t]), steps:r.steps.map(t=>({t})), img:r.image||'', imported:true, source:r.sourceUrl,
+        sub:uniqSugs.length?('המתכון יובא מבחוץ ולא לגמרי מתאים לכללים. תחליפים מומלצים: '+uniqSugs.join('; ')):null};
+      custom.push(nr); RECIPES.push(nr); saveCustom(); render(); closeImport(); openRecipe(nr.id);
+    };
+    st.textContent='נמצא מתכון! בדקו לפני שמוסיפים 👇';
+  }catch(e){
+    st.innerHTML='<span class="imperr">החיבור נכשל או ארך יותר מדי. נסו שוב.</span>';
+  }
+}
+$('#impBtn').onclick=openImport;
+
 function renderGuide(){
   $('#flours').innerHTML = FLOURS.map(f=>`<div class="guidecard"><b>${esc(f.n)}</b><p>${esc(f.d)}</p></div>`).join('');
   $('#sweets').innerHTML = SWEETS.map(f=>`<div class="guidecard"><b>${esc(f.n)}</b><p>${esc(f.d)}</p></div>`).join('');
