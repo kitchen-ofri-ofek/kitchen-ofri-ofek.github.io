@@ -100,6 +100,7 @@ main{max-width:720px; margin:0 auto; padding:0 1rem;}
 html[data-contrast="high"] .badge.gf{background:#fff; border:1px solid var(--good);}
 .badge.vg{background:#EDF0E4; color:#5B6B2E;}
 .badge.cut{background:#F7E3DC; color:var(--accent);}
+.badge.ninja{background:#E3E9F4; color:#2E4A7A;}
 html[data-contrast="high"] .badge.vg{background:#fff; border:1px solid #5B6B2E;}
 .fav{
   position:absolute; top:.5rem; left:.5rem; min-width:44px; min-height:44px;
@@ -348,7 +349,7 @@ html[data-contrast="high"] .subnote{background:#fff; border:2px solid var(--acce
 
 <footer>נבנה באהבה בשביל עופרי ואופק 🧡 בלי קמח חיטה, בלי סוכר לבן, בלי פשרות על הטעם.</footer>
 <script>
-const IMG={"protein-omelet": "1-31-proteinomelet.jpg", "chicken-bites": "2-32-chickenbites.jpg", "tuna-quinoa": "3-33-tunaquinoa.jpg", "yogurt-bowl": "4-34-yogurtbowl.jpg", "chia": "1-chia.jpg", "curry": "2-curry.jpg", "almondbread": "3-almondbread.jpg", "brownies": "4-brownies.jpg", "chococake": "5-chococake.jpg", "cookies": "6-cookies.jpg", "dateballs": "7-dateballs.jpg", "granola": "8-granola.jpg", "lemoncake": "9-lemoncake.jpg", "lentils": "10-lentils.jpg", "lentilsalad": "11-lentilsalad.jpg", "malabi": "12-malabi.jpg", "mangosalad": "13-mangosalad.jpg", "muffins": "14-muffins.jpg", "nicecream": "15-nicecream.jpg", "omelette": "16-omelette.jpg", "pancakes": "17-pancakes.jpg", "pasta": "18-pasta.jpg", "patties": "19-patties.jpg", "pizza": "20-pizza.jpg", "quinoabowl": "21-quinoabowl.jpg", "schnitzel": "22-schnitzel.jpg", "slaw": "23-slaw.jpg", "stirfry": "24-stirfry.jpg", "crackers": "25-crackers.jpg"};
+const IMG={"ninja-steak": "1-ninja-steak.jpg", "ninja-crispy": "2-ninja-crispy.jpg", "ninja-kebab": "3-ninja-kebab.jpg", "ninja-veggies": "4-ninja-veggies.jpg", "ninja-salmon": "5-ninja-salmon.jpg", "ninja-applechips": "6-ninja-applechips.jpg", "protein-omelet": "1-31-proteinomelet.jpg", "chicken-bites": "2-32-chickenbites.jpg", "tuna-quinoa": "3-33-tunaquinoa.jpg", "yogurt-bowl": "4-34-yogurtbowl.jpg", "chia": "1-chia.jpg", "curry": "2-curry.jpg", "almondbread": "3-almondbread.jpg", "brownies": "4-brownies.jpg", "chococake": "5-chococake.jpg", "cookies": "6-cookies.jpg", "dateballs": "7-dateballs.jpg", "granola": "8-granola.jpg", "lemoncake": "9-lemoncake.jpg", "lentils": "10-lentils.jpg", "lentilsalad": "11-lentilsalad.jpg", "malabi": "12-malabi.jpg", "mangosalad": "13-mangosalad.jpg", "muffins": "14-muffins.jpg", "nicecream": "15-nicecream.jpg", "omelette": "16-omelette.jpg", "pancakes": "17-pancakes.jpg", "pasta": "18-pasta.jpg", "patties": "19-patties.jpg", "pizza": "20-pizza.jpg", "quinoabowl": "21-quinoabowl.jpg", "schnitzel": "22-schnitzel.jpg", "slaw": "23-slaw.jpg", "stirfry": "24-stirfry.jpg", "crackers": "25-crackers.jpg"};
 
 // ================= DATA =================
 const CATS = {b:'בוקר', m:'עיקריות', s:'סלטים', k:'קינוחים', p:'מאפים'};
@@ -667,7 +668,73 @@ const RECIPES = [
   {t:'מוזגים חצי מהיוגורט לקערה או כוס גבוהה.'},
   {t:'מסדרים שכבת פירות ושכבת גרנולה, ומעל שאר היוגורט.'},
   {t:'מפזרים מעל צ\'יה ועוד קצת גרנולה, ומוסיפים סילאן אם בא מתוק יותר.'}],
- tip:'אם היוגורט חמוץ מדי בשבילכם, הכפית סילאן מאזנת בלי טיפת סוכר לבן.'}
+ tip:'אם היוגורט חמוץ מדי בשבילכם, הכפית סילאן מאזנת בלי טיפת סוכר לבן.'},
+{id:'ninja-steak', t:'פרוסות חזה עוף בנינג׳ה גריל', c:'m', min:20, serve:2, gf:1, vg:0, cut:1, ninja:1,
+ d:'פסי גריל אמיתיים בבית, בלי עשן ובלי שמן מיותר - כ-40 גרם חלבון למנה. מצריך נינג׳ה גריל במצב גריל.',
+ sub:null,
+ ing:[[500,'גרם','חזה עוף פרוס לפרוסות בעובי אצבע'],[2,'כפות','שמן זית'],[1,'כפית','פפריקה מתוקה'],[0.5,'כפית','אבקת שום'],[0.5,'כפית','זעתר'],[0.75,'כפית','מלח'],[null,'','פלפל שחור גרוס'],[1,'','לימון סחוט']],
+ steps:[
+  {t:'מערבבים את הפרוסות עם שמן זית, תבלינים ולימון, ומרינים 10 דקות (או עד לילה במקרר).', timer:10},
+  {t:'מחממים את הנינג׳ה במצב גריל על חום גבוה כ-8 דקות עד שהמכשיר מסמן שהוא חם.', timer:8},
+  {t:'סודרים את הפרוסות על פסי הגריל בשכבה אחת וסוגרים את המכסה.'},
+  {t:'צולים 5-6 דקות, הופכים פעם אחת באמצע. הפרוסה מוכנה כשהיא משתחררת בקלות עם פסים עמוקים.', timer:6},
+  {t:'מוציאים ונותנים 3 דקות מנוחה לפני ההגשה.', timer:3}],
+ tip:'רוצים פסי גריל חדים? לא זזים את הפרוסה עד ההפיכה - הסבלנות עושה את הפסים.'},
+{id:'ninja-crispy', t:'נאגטס עוף קריספי בטיגון אוויר', c:'m', min:25, serve:2, gf:1, vg:0, cut:1, ninja:1,
+ d:'נאגטס זהובים ופריכים בטיגון אוויר בלי שמן עמוק בכלל - כ-40 גרם חלבון למנה.',
+ sub:'במקום פירורי לחם - שקדים טחונים עם קורנפלור: פריך בלי קמח חיטה.',
+ ing:[[500,'גרם','חזה עוף בקוביות בינוניות'],[1,'','ביצה טרופה'],[0.5,'כוס','שקדים טחונים דק'],[0.25,'כוס','קורנפלור'],[1,'כפית','פפריקה'],[0.5,'כפית','אבקת שום'],[0.5,'כפית','מלח'],[null,'','ספריי שמן']],
+ steps:[
+  {t:'מערבבים שקדים טחונים, קורנפלור ותבלינים בצלחת שטוחה.'},
+  {t:'טובלים כל קוביה בביצה ואז בציפוי, ומהדקים קלות שהציפוי ידבק.'},
+  {t:'מחממים את הנינג׳ה במצב טיגון אוויר על 200 מעלות כ-3 דקות.', timer:3},
+  {t:'סודרים בסל בשכבה אחת, מרססים ספריי שמן ומטגנים 10-12 דקות, מנערים באמצע.', timer:12},
+  {t:'מוכן כשהציפוי זהוב ופריך. מגישים עם חרדל או רוטב צ\'ילי בלי סוכר.'}],
+ tip:'שכבה אחת בלבד בסל - צפיפות הורסת פריכות. שתי פעימות עדיפות על נאגטס רכים.'},
+{id:'ninja-kebab', t:'קבב בקר על הנינג׳ה גריל', c:'m', min:25, serve:3, gf:1, vg:0, cut:1, ninja:1,
+ d:'קבב עסיסי עם פסי צריבה בלי להדליק מנגל - כ-30 גרם חלבון למנה.',
+ sub:'במקום פירורי לחם לקישור - בצל מגורר וטחינה: הקבב נצמד מעצמו בלי קמח.',
+ ing:[[500,'גרם','בשר בקר טחון רזה (10-15%)'],[1,'','בצל קטן מגורר דק וסחוט'],[2,'כפות','טחינה גולמית'],[2,'','שיני שום כתושות'],[1,'כפית','כמון'],[1,'כפית','סומסום (רשות)'],[0.75,'כפית','מלח'],[null,'','פלפל שחור, פטרוזיליה קצוצה']],
+ steps:[
+  {t:'לושים את כל המרכיבים בידיים רטובות 2-3 דקות עד שהתערובת דביקה.'},
+  {t:'מעצבים קבבים בעובי אצבע, משטחים קלות, ומקררים 15 דקות להתייצבות.', timer:15},
+  {t:'מחממים את הנינג׳ה במצב גריל על חום גבוה כ-8 דקות.', timer:8},
+  {t:'צולים 8-10 דקות, הופכים באמצע בעדינות עם שתי מלקחיים.', timer:10},
+  {t:'מגישים עם סלט עגבניות, טחינה ובצל סגול.'}],
+ tip:'הטחינה בתערובת היא הסוד לקבב עסיסי מבשר רזה - אל תוותרו עליה.'},
+{id:'ninja-veggies', t:'ירקות קלויים בגריל עם סילאן', c:'s', min:20, serve:3, gf:1, vg:1, ninja:1,
+ d:'ירקות עם פסי צריבה מתוקים-מעושנים, בלי תנור ובלי מחבת. מצריך נינג׳ה גריל במצב גריל.',
+ sub:'במקום דבש לקרמול - סילאן: מתאים לכללי המטבח שלנו.',
+ ing:[[2,'','זוקיני בפרוסות עבות לאורך'],[1,'','בטטה בפרוסות דקות'],[1,'','פלפל אדום ברבעים'],[1,'','בצל סגול בפרוסות'],[2,'כפות','שמן זית'],[1,'כף','סילאן'],[0.5,'כפית','מלח'],[null,'','פלפל שחור, טימין']],
+ steps:[
+  {t:'מערבבים את הירקות עם שמן זית, מלח ותבלינים.'},
+  {t:'מחממים את הנינג׳ה במצב גריל על חום בינוני-גבוה כ-8 דקות.', timer:8},
+  {t:'צולים את הבטטה לבדה קודם 4 דקות, ואז מוסיפים את שאר הירקות.', timer:4},
+  {t:'ממשיכים עוד 6-8 דקות, הופכים באמצע, עד פסים יפים ורכות.', timer:8},
+  {t:'מסדרים בצלחת ומורחים מעל סילאן דליל ומעט מלח גס.'}],
+ tip:'הבטטה נכנסת ראשונה כי היא הכי קשה - אם שמים הכל יחד הזוקיני מתרכך לפני שהיא מוכנה.'},
+{id:'ninja-salmon', t:'פילה סלמון בגריל עם סילאן ולימון', c:'m', min:15, serve:2, gf:1, vg:0, cut:1, ninja:1,
+ d:'סלמון עסיסי עם קרום סילאן מקורמל - מוכן ב-10 דקות עבודה. כ-35 גרם חלבון ואומגה 3 למנה.',
+ sub:'במקום סוכר חום לקרמול - סילאן: קרמליזציה יפה בלי סוכר לבן.',
+ ing:[[2,'','פילה סלמון (כ-150 גרם כל אחד)'],[1,'כף','סילאן'],[1,'כף','שמן זית'],[1,'כפית','חרדל דיז׳ון'],[1,'','לימון - מיץ וקליפה'],[0.5,'כפית','מלח'],[null,'','פלפל שחור, שמיר או פטרוזיליה']],
+ steps:[
+  {t:'מערבבים סילאן, חרדל, שמן זית, מיץ לימון ותבלינים ומורחים על הפילה.'},
+  {t:'מחממים את הנינג׳ה במצב גריל על חום בינוני כ-8 דקות.', timer:8},
+  {t:'מניחים את הפילה עם העור כלפי מטה וסוגרים את המכסה.'},
+  {t:'צולים 7-9 דקות בלי להפוך - הסלמון מוכן כשהוא נפרד לשכבות אבל עדיין ורוד במרכז.', timer:8},
+  {t:'מגישים מיד עם פלח לימון ועירוב ירוקים.'}],
+ tip:'לא הופכים סלמון על הגריל - העור מגן מלמטה והסילאן מקורמל מלמעלה.'},
+{id:'ninja-applechips', t:'צ׳יפס תפוחים בייבוש', c:'k', min:360, serve:4, gf:1, vg:1, ninja:1,
+ d:'חטיף מתוק-פריך ממרכיב אחד בלבד - מצב הייבוש של הנינג׳ה עושה את כל העבודה במשך הלילה.',
+ sub:'במקום צ׳יפס תפוחים קנוי עם סוכר מוסף - תפוחים, קינמון וזהו.',
+ ing:[[3,'','תפוחים מתוקים (פוג׳י או גאלה)'],[1,'כפית','קינמון'],[1,'כפית','מיץ לימון (רשות, נגד השחמה)']],
+ steps:[
+  {t:'פורסים את התפוחים לפרוסות דקות ואחידות (מנדולינה עוזרת), בלי להסיר את הקליפה.'},
+  {t:'מפזרים קינמון ומעט מיץ לימון משני הצדדים.'},
+  {t:'סודרים על תבנית הייבוש בשכבה אחת בלי חפיפות.'},
+  {t:'מפעילים במצב ייבוש על 60 מעלות ל-6-8 שעות, עד שהפרוסות יבשות לגמרי.', timer:360},
+  {t:'מצננים לגמרי ושומרים בצנצנת אטומה - נשאר פריך כשבועיים.'}],
+ tip:'מפעילים לפני השינה ומתעוררים לצ׳יפס מוכן. פרוסות עבות מדי פשוט מאריכות ייבוש - בסדר גמור.'}
 ];
 
 const FLOURS = [
@@ -692,7 +759,7 @@ const TIPS = [
 ];
 
 // ================= STATE =================
-let state = {cat:'all', fast:false, gfOnly:false, vgOnly:false, favOnly:false, cutOnly:false, q:''};
+let state = {cat:'all', fast:false, gfOnly:false, vgOnly:false, favOnly:false, cutOnly:false, ninjaOnly:false, q:''};
 let favs = new Set(JSON.parse(localStorage.getItem('rcp-favs')||'[]'));
 let custom = JSON.parse(localStorage.getItem('rcp-custom')||'[]');
 RECIPES.push(...custom);
@@ -794,7 +861,7 @@ function buildChips(){
   $('#catChips').innerHTML = cats.map(([k,l])=>
     `<button class="chip" data-cat="${k}" aria-pressed="${state.cat===k}">${l}</button>`).join('');
   $('#tagChips').innerHTML = [
-    ['fast','⚡ עד 30 דקות'],['gfOnly','ללא גלוטן'],['vgOnly','טבעוני'],['cutOnly','💪 חיטוב'],['favOnly','❤️ מועדפים']
+    ['fast','⚡ עד 30 דקות'],['gfOnly','ללא גלוטן'],['vgOnly','טבעוני'],['cutOnly','💪 חיטוב'],['ninjaOnly','🔥 נינג׳ה גריל'],['favOnly','❤️ מועדפים']
   ].map(([k,l])=>`<button class="chip" data-tag="${k}" aria-pressed="${state[k]}">${l}</button>`).join('');
   document.querySelectorAll('[data-cat]').forEach(b=>b.onclick=()=>{state.cat=b.dataset.cat;render();});
   document.querySelectorAll('[data-tag]').forEach(b=>b.onclick=()=>{state[b.dataset.tag]=!state[b.dataset.tag];render();});
@@ -805,6 +872,7 @@ function matches(r){
   if(state.gfOnly && !r.gf) return false;
   if(state.vgOnly && !r.vg) return false;
   if(state.cutOnly && !r.cut) return false;
+  if(state.ninjaOnly && !r.ninja) return false;
   if(state.favOnly && !favs.has(r.id)) return false;
   if(state.q){
     const hay = (r.t+' '+r.d+' '+r.ing.map(i=>i[2]).join(' ')).toLowerCase();
@@ -823,7 +891,7 @@ function render(){
       <h3>${esc(r.t)}</h3>
       <div class="meta"><span>${CATS[r.c]}</span><span>⏱ ${r.min} דקות</span></div>
       <div class="desc">${esc(r.d)}</div>
-      <div>${r.gf?'<span class="badge gf">ללא גלוטן</span>':''}${r.vg?'<span class="badge vg">טבעוני</span>':''}${r.cut?'<span class="badge cut">💪 חיטוב</span>':''}${r.imported?'<span class="badge imp">מיובא 🔗</span>':''}</div>
+      <div>${r.gf?'<span class="badge gf">ללא גלוטן</span>':''}${r.vg?'<span class="badge vg">טבעוני</span>':''}${r.cut?'<span class="badge cut">💪 חיטוב</span>':''}${r.ninja?'<span class="badge ninja">🔥 נינג׳ה גריל</span>':''}${r.imported?'<span class="badge imp">מיובא 🔗</span>':''}</div>
     </article>`).join('')
    : `<div class="empty">לא נמצאו מתכונים שמתאימים לסינון.<br>נסו לבטל חלק מהסינונים 🙂</div>`;
   grid.querySelectorAll('.card').forEach(c=>{
