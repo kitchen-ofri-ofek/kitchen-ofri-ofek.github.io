@@ -935,7 +935,7 @@ function drawSheet(){
     <div class="meta"><span>📂 ${CATS[r.c]}</span><span>⏱ ${r.min} דקות</span>
       <button class="fav" style="position:static" data-fav="${r.id}" aria-pressed="${favs.has(r.id)}" aria-label="שמירה למועדפים">${favs.has(r.id)?'❤️':'🤍'}</button>
     </div>
-    ${r.gf?'<span class="badge gf">ללא גלוטן</span>':''}${r.vg?'<span class="badge vg">טבעוני</span>':''}
+    <div>${r.gf?'<span class="badge gf">ללא גלוטן</span>':''}${r.vg?'<span class="badge vg">טבעוני</span>':''}${r.cut?'<span class="badge cut">💪 חיטוב</span>':''}${r.ninja?'<span class="badge ninja">🔥 נינג׳ה גריל</span>':''}${r.imported?'<span class="badge imp">מיובא 🔗</span>':''}${r.translated?'<span class="badge imp">תורגם אוטומטית 🌐</span>':''}</div>
     <p style="margin-top:.4rem;color:var(--muted)">${esc(r.d)}</p>
     ${r.sub?`<div class="subnote"><b>התאמה למטבח שלנו:</b> ${esc(r.sub)}</div>`:''}
     <h2 class="sec">מצרכים</h2>
