@@ -119,7 +119,8 @@ html[data-contrast="high"] .badge.vg{background:#fff; border:1px solid #5B6B2E;}
   display:block; background:var(--chip);
 }
 
-.ings .qty{border-bottom:2px dotted var(--accent); cursor:pointer; font-weight:700;}
+.ings .qty{font-weight:700; -webkit-tap-highlight-color:transparent;}
+.ings .qty[data-cv]{border-bottom:2px dotted var(--accent); cursor:pointer;}
 .conv{display:none; font-size:.85rem; color:var(--accent-dark); background:var(--chip); border-radius:8px; padding:.3rem .6rem; margin:.25rem 0;}
 .conv.open{display:block;}
 .hintline{font-size:.85rem; color:var(--muted); margin-top:.2rem;}
@@ -811,6 +812,7 @@ function conversions(q,u,name){
       const tb=cups*16;
       if(tb>=1&&tb<=16) out.push('≈ '+fmtQty(tb)+' כפות');
     }
+    if(!out.length) out.push('גרם הוא כבר יחידת משקל מדויקה - אין צורך בהמרה');
   }
   return out;
 }
@@ -939,7 +941,7 @@ function drawSheet(){
     <p style="margin-top:.4rem;color:var(--muted)">${esc(r.d)}</p>
     ${r.sub?`<div class="subnote"><b>התאמה למטבח שלנו:</b> ${esc(r.sub)}</div>`:''}
     <h2 class="sec">מצרכים</h2>
-    <div class="hintline">טיפ: לחיצה ארוכה על כמות מציגה המרה ליחידות אחרות ⚖️</div>
+    <div class="hintline">טיפ: לחיצה ארוכה על כמות עם קו מקווקו מציגה המרה ⚖️</div>
     <div class="servings">
       <button id="srvMinus" aria-label="פחות מנות">−</button>
       <span class="n">${sel} מנות</span>
