@@ -972,9 +972,22 @@ let custom = JSON.parse(localStorage.getItem('rcp-custom')||'[]');
 RECIPES.push(...custom);
 const SHARED_API='https://recipes-import-api.mqog1v.workers.dev/recipes';
 let sharedDt=JSON.parse(localStorage.getItem('rcp-shared-dt')||'{}');
-function sharedToRecipe(x){ return {id:x.id,t:x.t,d:'מתכון משותף שהוקלד באתר',c:x.c||'m',min:x.min||30,serve:x.serve||4,gf:false,vg:false,
-  ing:x.ing.map(t=>[null,null,t]),steps:x.steps.map(t=>({t})),img:'',imported:true,typed:true,shared:true,
-  sub:(()=>{const u=[...new Set(x.ing.map(t=>dietCheck(t)).filter(Boolean))];return u.length?('המתכון הוזן ידנית ולא לגמרי מתאים לכללים. תחליפים מומלצים: '+u.join('; ')):null;})()}; }
+function sharedToRecipe(x){ const ext=!!(x.src||x.source); return {id:x.id,t:x.t,d:x.d||(ext?'מתכון משותף שיובא מקישור':'מתכון משותף שהוקלד באתר'),c:x.c||'m',min:x.min||30,serve:x.serve||4,gf:false,vg:false,
+  ing:x.ing.map(t=>[null,null,t]),steps:x.steps.map(t=>({t})),img:x.img||'',imported:true,typed:!ext,shared:true,src:x.src||undefined,source:x.source||undefined,
+  sub:(()=>{const u=[...new Set(x.ing.map(t=>dietCheck(t)).filter(Boolean))];return u.length?((ext?'המתכון יובא מבחוץ':'המתכון הוזן ידנית')+' ולא לגמרי מתאים לכללים. תחליפים מומלצים: '+u.join('; ')):null;})()}; }
+const SHARE_ERR={rate:'הוספת יותר מדי מתכונים בשעה האחרונה. נסו שוב מאוחר יותר.',full:'האתר הגיע למקסימום מתכונים משותפים.',duplicate:'המתכון הזה כבר קיים באתר.',too_big:'המתכון ארוך מדי.'};
+function shareRecipe(payload){
+  return fetch(SHARED_API,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(payload)})
+    .then(r=>r.json().catch(()=>({ok:false}))).then(d=>{
+      if(d.ok){
+        sharedDt[d.recipe.id]=d.dt; localStorage.setItem('rcp-shared-dt',JSON.stringify(sharedDt));
+        let cache=[]; try{cache=JSON.parse(localStorage.getItem('rcp-shared-cache')||'[]');}catch(e){}
+        cache.push(d.recipe); localStorage.setItem('rcp-shared-cache',JSON.stringify(cache));
+        RECIPES.push(sharedToRecipe(d.recipe));
+      }
+      return d;
+    }).catch(()=>({ok:false,reason:'net'}));
+}
 function applyShared(list){
   for(let i=RECIPES.length-1;i>=0;i--) if(RECIPES[i].shared) RECIPES.splice(i,1);
   list.forEach(x=>{ try{ RECIPES.push(sharedToRecipe(x)); }catch(e){} });
@@ -1330,16 +1343,28 @@ function setupTextPane(){
     const sugs=[...new Set(ing.map(t=>dietCheck(t)).filter(Boolean))];
     const min=parseInt($('#txMin').value)||30, serve=Math.min(24,Math.max(1,parseInt($('#txServe').value)||4));
     const btn=$('#txAdd'); btn.disabled=true; S.textContent='שומרים באתר… ⏳';
-    fetch(SHARED_API,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({t:title,ing,steps:st,min,serve,c:cat})})
-      .then(r=>r.json().catch(()=>({ok:false}))).then(d=>{
-        if(!d.ok){
-          const m={rate:'הוספת יותר מדי מתכונים בשעה האחרונה. נסו שוב מאוחר יותר.',full:'האתר הגיע למקסימום מתכונים משותפים.',duplicate:'המתכון הזה כבר קיים באתר.',too_big:'המתכון ארוך מדי.'}[d.reason]||'השמירה נכשלה (אין חיבור או שגיאה בשרת). נסו שוב.';
-          S.innerHTML='<span class="imperr">'+m+'</span>'; btn.disabled=false; return;
-        }
-        sharedDt[d.recipe.id]=d.dt; localStorage.setItem('rcp-shared-dt',JSON.stringify(sharedDt));
-        const cache=JSON.parse(localStorage.getItem('rcp-shared-cache')||'[]'); cache.push(d.recipe); localStorage.setItem('rcp-shared-cache',JSON.stringify(cache));
-        RECIPES.push(sharedToRecipe(d.recipe)); render(); closeImport(); openRecipe(d.recipe.id);
-      }).catch(()=>{ S.innerHTML='<span class="imperr">השמירה נכשלה (אין חיבור). נסו שוב.</span>'; btn.disabled=false; });
+    shareRecipe({t:title,ing,steps:st,min,serve,c:cat}).then(d=>{
+      if(!d.ok){ S.innerHTML='<span class="imperr">'+(SHARE_ERR[d.reason]||'השמירה נכשלה (אין חיבור או שגיאה בשרת). נסו שוב.')+'</span>'; btn.disabled=false; return; }
+      render(); closeImport(); openRecipe(d.recipe.id);
+    });
+  };
+}
+function localShareable(){ return custom.filter(x=>x&&x.t&&Array.isArray(x.ing)&&Array.isArray(x.steps)&&x.ing.every(g=>g&&g[0]==null)); }
+function setupMigrate(){
+  const box=$('#migBox'); const list=localShareable();
+  if(!list.length){ box.innerHTML=''; return; }
+  box.innerHTML='<h3 class="sec">מתכונים ששמורים רק במכשיר הזה</h3><p style="color:var(--muted)">יש '+list.length+' מתכונים שיובאו קודם ושמורים רק כאן. אפשר לשתף אותם כך שכולם יראו אותם.</p><button class="reset-ings" id="migGo" type="button">📤 שיתוף המתכונים שלי עם כולם ('+list.length+')</button><div class="impstatus" id="migStatus" aria-live="polite"></div>';
+  $('#migGo').onclick=async()=>{
+    const btn=$('#migGo'), S=$('#migStatus'); btn.disabled=true; let ok=0, dup=0, fail=0, lastReason='';
+    for(const x of list){
+      S.textContent='משתפים… '+(ok+dup+fail+1)+' מתוך '+list.length;
+      const d=await shareRecipe({t:x.t,ing:x.ing.map(g=>g[2]),steps:x.steps.map(z=>z.t),min:x.min||30,serve:x.serve||4,c:x.c||'m',d:x.d||'',src:x.src||'',source:x.source||x.src||'',img:x.img||''});
+      if(d.ok||d.reason==='duplicate'){ if(d.ok) ok++; else dup++; custom=custom.filter(c=>c.id!==x.id); const ix=RECIPES.findIndex(r=>r.id===x.id); if(ix>=0) RECIPES.splice(ix,1); saveCustom(); }
+      else { fail++; lastReason=d.reason; if(d.reason==='rate'||d.reason==='full'||d.reason==='net') break; }
+    }
+    render();
+    S.innerHTML=(ok?'שותפו '+ok+' מתכונים. ':'')+(dup?dup+' כבר היו באתר. ':'')+(fail?'<span class="imperr">'+fail+' לא שותפו ('+(SHARE_ERR[lastReason]||'שגיאה')+') - אפשר ללחוץ שוב אחר כך.</span>':'');
+    if(!fail) $('#migGo').hidden=true; else btn.disabled=false;
   };
 }
 function openImport(){
@@ -1356,6 +1381,7 @@ function openImport(){
     </div>
     <div class="impstatus" id="impStatus" aria-live="polite"></div>
     <div id="impPreview"></div>
+    <div id="migBox"></div>
     </div>
     <div id="impTextPane" hidden>
     <p style="color:var(--muted)">כותבים או מדביקים מתכון. המתכון נשמר באתר ויופיע לכל מי שפותח אותו. אפשר להדביק מתכון שלם בתיבה הראשונה (עם כותרות "מצרכים" ו"הכנה") ולמלא את השדות אוטומטית, או למלא כל שדה בנפרד. שורה אחת לכל מצרך ולכל שלב.</p>
@@ -1379,6 +1405,7 @@ function openImport(){
   $('#impClose').onclick=closeImport;
   $('#impGo').onclick=runImport;
   setupTextPane();
+  setupMigrate();
   $('#impUrl').focus();
 }
 function closeImport(){ $('#impSheet').classList.remove('open'); document.body.style.overflow=''; }
@@ -1439,11 +1466,11 @@ async function runImport(){
     <button class="cook-cta" id="impAdd">✅ הוספה למתכונים שלנו</button>`;
   pv.querySelectorAll('#impCats button').forEach(b=>b.onclick=()=>{ selCat=b.dataset.k; pv.querySelectorAll('#impCats button').forEach(x=>x.classList.toggle('sel',x===b)); });
   $('#impAdd').onclick=()=>{
-    const nr={id:'imp-'+Date.now(), t:r.title, d:r.description||'מתכון שיובא מקישור', c:selCat, min:r.minutes||30, serve:r.servings||4,
-      gf:false, vg:false, ing:r.ingredients.map(t=>[null,null,t]), steps:r.steps.map(t=>({t})), img:r.image||'', imported:true, source:r.sourceUrl,
-      src:r.src||undefined,
-      sub:uniqSugs.length?('המתכון יובא מבחוץ ולא לגמרי מתאים לכללים. תחליפים מומלצים: '+uniqSugs.join('; ')):null};
-    custom.push(nr); RECIPES.push(nr); saveCustom(); render(); closeImport(); openRecipe(nr.id);
+    const btn=$('#impAdd'); btn.disabled=true; st.textContent='שומרים באתר… ⏳';
+    shareRecipe({t:r.title,ing:r.ingredients,steps:r.steps,min:r.minutes||30,serve:r.servings||4,c:selCat,d:r.description||'',src:r.src||'',source:r.sourceUrl||'',img:r.image||''}).then(d=>{
+      if(!d.ok){ st.innerHTML='<span class="imperr">'+(SHARE_ERR[d.reason]||'השמירה נכשלה (אין חיבור או שגיאה בשרת). נסו שוב.')+'</span>'; btn.disabled=false; return; }
+      render(); closeImport(); openRecipe(d.recipe.id);
+    });
   };
   st.textContent='נמצא מתכון! בדקו לפני שמוסיפים 👇';
 }
