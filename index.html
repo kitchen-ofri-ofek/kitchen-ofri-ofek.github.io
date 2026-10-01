@@ -972,18 +972,51 @@ let custom = JSON.parse(localStorage.getItem('rcp-custom')||'[]');
 RECIPES.push(...custom);
 const SHARED_API='https://recipes-import-api.mqog1v.workers.dev/recipes';
 let sharedDt=JSON.parse(localStorage.getItem('rcp-shared-dt')||'{}');
+function dietIssues(ing,steps){
+  const out=[];
+  const flourOK=/קמח\s*(שקדים|קוקוס|שיבולת|אורז|תירס|חומוס|טפיוקה|כוסמין|קפוטו|תפוחי|ללא|עדשים|שעועית|כוסמת|קינואה|בוטנים|אגוזים|גרעיני|דורה|מנגו)/;
+  const wheatProd=/(?:^|\s)(פירורי\s*לחם|לחם|פסטה|פיתה|טורטייה|סולת|קוסקוס|בורגול|קורנפלקס|עוגיות\s*פתיבר|בצק\s*עלים|בצק\s*פילו|מקרונים|ספגטי|אטריות)(?:\s|$)/;
+  ing.forEach((l,idx)=>{
+    const t=String(l);
+    if(/קמח|flour/i.test(t)&&!flourOK.test(t)&&!/flour\s*(almond|coconut|oat|rice)/i.test(t)) out.push({k:'flour',i:idx,line:t,fix:'קמח חיטה ← קמח קפוטו ללא גלוטן, או קמח שקדים (עם קצת פחות נוזלים)',apply:{re:/קמח(?!\s*(?:קפוטו|שקדים|ללא))(\s*(?:לבן|רגיל|תופח|מלא|חיטה|סולת))?/,to:'קמח קפוטו ללא גלוטן'}});
+    else if(wheatProd.test(t)) out.push({k:'wheat',i:idx,line:t,fix:'מוצר על בסיס חיטה ← גרסה ללא גלוטן (לחם/פסטה/פירורים ללא גלוטן) או תחליף כמו קמח שקדים/פירורי שקדים'});
+    if(/סוכר|sugar/i.test(t)&&!/קוקוס|ללא\s*סוכר|coconut|sugar[- ]free/i.test(t)) out.push({k:'sugar',i:idx,line:t,fix:'סוכר ← מייפל או סילאן, בערך ⅔ מהכמות, ולהקטין מעט נוזלים במתכון',apply:{re:/(?:אבקת\s+)?סוכר(?:\s+(?:לבן|חום|דמררה|וניל|קנים))?/,to:'מייפל'}});
+    if(/חמאה|מרגרינה|butter|margarine/i.test(t)) out.push({k:'fat',i:idx,line:t,fix:'שומן גבוה ← רסק תפוחים או יוגורט יווני 0-2% בחלק מהכמות (באפייה), או שמן קוקוס בכמות קטנה יותר'});
+    else if(/שמנת|מיונז|גבינה\s*צהובה|גבינת\s*שמנת|קרם\s*פרש|cream|mayo/i.test(t)) out.push({k:'fat',i:idx,line:t,fix:'שומן גבוה ← יוגורט יווני או קוטג\' (חלבון גבוה, דל שומן), או גרסה דלת שומן של אותו מוצר'});
+    else if(/שמן(?!\s*זית\s*ספריי)|oil/i.test(t)&&!/שמן\s*(?:קוקוס)/.test(t)) out.push({k:'fat',i:idx,line:t,fix:'שמן ← להפחית בחצי ולהשלים עם רסק תפוחים/בננה מעוכה, או להשתמש במעט שמן זית/קוקוס'});
+  });
+  const joined=ing.join(' ');
+  if(!/ביצ|קוטג|יוגורט|חלבון|טופו|עוף|הודו|דג|טונה|עדש|גבינ|חומוס|שעועית|egg|protein|yogurt|cottage/i.test(joined)) out.push({k:'protein',i:-1,line:'',fix:'מעט חלבון במתכון: אפשר להוסיף ביצה/חלבון ביצה, קוטג\', יוגורט יווני או אבקת חלבון'});
+  steps.forEach((l,idx)=>{ if(/מיקרוגל|מיקרו|microwave/i.test(l)) out.push({k:'micro',i:idx,line:l,fix:'אין מיקרוגל ← להמיס/לחמם בסיר (באמבט מים לשוקולד), במחבת או בתנור'}); });
+  return out;
+}
+function dietHTML(items,withApply){
+  if(!items.length) return '<div class="subnote">✅ לא זיהינו בעיה מול כללי המטבח (בלי קמח חיטה, בלי סוכר לבן, בלי מיקרוגל, חלבון גבוה ודל שומן). זו בדיקה לפי מילות מפתח בלבד.</div>';
+  const lab={flour:'קמח חיטה',wheat:'חיטה',sugar:'סוכר',fat:'שומן',protein:'חלבון',micro:'מיקרוגל'};
+  return '<div class="subnote"><b>התאמה למטבח שלנו - הצעות לשינוי:</b><ul style="margin:.4rem 0 0; padding-inline-start:1.1rem">'+items.map((x,n)=>'<li style="margin:.3rem 0">'+(x.line?'<b>'+esc(x.line)+'</b>: ':'')+esc(x.fix)+(withApply&&x.apply?' <button type="button" class="reset-ings" data-apply="'+n+'" style="margin:.2rem 0">החלפה</button>':'')+'</li>').join('')+'</ul><div style="margin-top:.3rem;font-size:.85rem;color:var(--muted)">הבדיקה לפי מילות מפתח - בדקו בעצמכם, כמויות ותוצאה יכולות להשתנות.</div></div>';
+}
+function recipeSubHTML(r){
+  if(r.imported){ return dietHTML(dietIssues(r.ing.map(g=>g[2]||''),r.steps.map(s=>s.t||'')),false).replace('✅ לא זיהינו','✅ לא זיהינו'); }
+  return r.sub?`<div class="subnote"><b>התאמה למטבח שלנו:</b> ${esc(r.sub)}</div>`:'';
+}
 function sharedToRecipe(x){ const ext=!!(x.src||x.source); return {id:x.id,t:x.t,d:x.d||(ext?'מתכון משותף שיובא מקישור':'מתכון משותף שהוקלד באתר'),c:x.c||'m',min:x.min||30,serve:x.serve||4,gf:false,vg:false,
-  ing:x.ing.map(t=>[null,null,t]),steps:x.steps.map(t=>({t})),img:x.img||'',imported:true,typed:!ext,shared:true,src:x.src||undefined,source:x.source||undefined,
+  ing:x.ing.map(t=>[null,null,t]),steps:x.steps.map(t=>({t})),img:x.img||'',ig:x.ig||0,ed:x.ed||0,imported:true,typed:!ext,shared:true,src:x.src||undefined,source:x.source||undefined,
   sub:(()=>{const u=[...new Set(x.ing.map(t=>dietCheck(t)).filter(Boolean))];return u.length?((ext?'המתכון יובא מבחוץ':'המתכון הוזן ידנית')+' ולא לגמרי מתאים לכללים. תחליפים מומלצים: '+u.join('; ')):null;})()}; }
-const SHARE_ERR={rate:'הוספת יותר מדי מתכונים בשעה האחרונה. נסו שוב מאוחר יותר.',full:'האתר הגיע למקסימום מתכונים משותפים.',duplicate:'המתכון הזה כבר קיים באתר.',too_big:'המתכון ארוך מדי.'};
-function shareRecipe(payload){
-  return fetch(SHARED_API,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(payload)})
+const SHARE_ERR={bad_image:'התמונה לא תקינה או גדולה מדי.',forbidden:'אין הרשאה לערוך את המתכון הזה מהמכשיר הזה.',not_found:'המתכון כבר לא קיים באתר.',rate:'הוספת יותר מדי מתכונים בשעה האחרונה. נסו שוב מאוחר יותר.',full:'האתר הגיע למקסימום מתכונים משותפים.',duplicate:'המתכון הזה כבר קיים באתר.',too_big:'המתכון ארוך מדי.'};
+function cacheShared(rec){
+  let cache=[]; try{cache=JSON.parse(localStorage.getItem('rcp-shared-cache')||'[]');}catch(e){}
+  const k=cache.findIndex(x=>x.id===rec.id); if(k>=0) cache[k]=rec; else cache.push(rec);
+  try{ localStorage.setItem('rcp-shared-cache',JSON.stringify(cache)); }catch(e){}
+}
+function shareRecipe(payload,editId){
+  const url=editId?(SHARED_API+'?id='+encodeURIComponent(editId)+'&dt='+encodeURIComponent(sharedDt[editId]||'')):SHARED_API;
+  return fetch(url,{method:editId?'PUT':'POST',headers:{'content-type':'application/json'},body:JSON.stringify(payload)})
     .then(r=>r.json().catch(()=>({ok:false}))).then(d=>{
       if(d.ok){
-        sharedDt[d.recipe.id]=d.dt; localStorage.setItem('rcp-shared-dt',JSON.stringify(sharedDt));
-        let cache=[]; try{cache=JSON.parse(localStorage.getItem('rcp-shared-cache')||'[]');}catch(e){}
-        cache.push(d.recipe); localStorage.setItem('rcp-shared-cache',JSON.stringify(cache));
-        RECIPES.push(sharedToRecipe(d.recipe));
+        if(!editId){ sharedDt[d.recipe.id]=d.dt; localStorage.setItem('rcp-shared-dt',JSON.stringify(sharedDt)); }
+        cacheShared(d.recipe);
+        const ix=RECIPES.findIndex(x=>x.id===d.recipe.id); const nr=sharedToRecipe(d.recipe);
+        if(ix>=0) RECIPES[ix]=nr; else RECIPES.push(nr);
       }
       return d;
     }).catch(()=>({ok:false,reason:'net'}));
@@ -1170,14 +1203,14 @@ function drawSheet(){
   const sel = servings[r.id], scale = sel/r.serve;
   $('#sheetInner').innerHTML = `
     <button class="close" id="sheetClose" aria-label="סגירה">✕</button>
-    <img class="heroimg" src="${r.img||IMG[r.id]||''}" alt="${esc(r.t)}" onerror="this.style.display='none'">
+    <img class="heroimg" src="${r.img||IMG[r.id]||''}" alt="${esc(r.t)}" onerror="this.style.display='none'">${r.ig?'<div class="hintline" style="margin-top:.2rem">🎨 תמונה שנוצרה אוטומטית (AI), להמחשה בלבד - לא תמונה אמיתית של המתכון</div>':''}
     <h1 id="sheetTitle">${esc(r.t)}</h1>
     <div class="meta"><span>📂 ${CATS[r.c]}</span><span>⏱ ${r.min} דקות</span>
       <button class="fav" style="position:static" data-fav="${r.id}" aria-pressed="${favs.has(r.id)}" aria-label="שמירה למועדפים">${favs.has(r.id)?'❤️':'🤍'}</button>
     </div>
     <div>${r.gf?'<span class="badge gf">ללא גלוטן</span>':''}${r.vg?'<span class="badge vg">טבעוני</span>':''}${r.cut?'<span class="badge cut">💪 חיטוב</span>':''}${r.ninja?'<span class="badge ninja">🔥 נינג׳ה גריל</span>':''}${r.src?'<span class="badge imp">על פי אסי רוז</span>':''}${r.imported?(r.typed?'<span class="badge imp">הוקלד ✍️</span>':'<span class="badge imp">מיובא 🔗</span>'):''}${r.translated?'<span class="badge imp">תורגם אוטומטית 🌐</span>':''}</div>
     <p style="margin-top:.4rem;color:var(--muted)">${esc(r.d)}</p>
-    ${r.sub?`<div class="subnote"><b>התאמה למטבח שלנו:</b> ${esc(r.sub)}</div>`:''}
+    ${recipeSubHTML(r)}
     ${r.src?`<div class="subnote">על פי <a href="${r.src}" target="_blank" rel="noopener" style="color:inherit"><b>אסי רוז</b></a> · ${r.imported?'המצרכים והשלבים מועתקים כלשהם מהמקור':'ההוראות נכתבו מחדש בשפה שלנו'} · <a href="${r.src}" target="_blank" rel="noopener" style="color:inherit">למתכון המקורי</a></div>`:''}
     <h2 class="sec">מצרכים</h2>
     <div class="hintline">טיפ: לחיצה ארוכה על כמות עם קו מקווקו מציגה המרה ⚖️</div>
@@ -1196,7 +1229,7 @@ function drawSheet(){
     </ol>
     ${r.tip?`<div class="tip">💡 ${esc(r.tip)}</div>`:''}
     <button class="cook-cta" id="startCook">👨‍🍳 מצב בישול - צעד אחר צעד</button>
-    ${r.shared?(sharedDt[r.id]?`<button class="reset-ings" id="delImp" style="color:#b00">מחיקת המתכון מהאתר (לכולם) 🗑</button>`:''):(r.imported?`<button class="reset-ings" id="delImp" style="color:#b00">מחיקת מתכון מיובא 🗑</button>`:'')}
+    ${r.shared&&sharedDt[r.id]?`<button class="reset-ings" id="editImp">✏️ עריכת מתכון</button>`:''}${r.shared?(sharedDt[r.id]?`<button class="reset-ings" id="delImp" style="color:#b00">מחיקת המתכון מהאתר (לכולם) 🗑</button>`:''):(r.imported?`<button class="reset-ings" id="delImp" style="color:#b00">מחיקת מתכון מיובא 🗑</button>`:'')}
   `;
   $('#sheetClose').onclick = closeSheet;
   $('#srvMinus').onclick = ()=>{ if(servings[r.id]>1){servings[r.id]--; drawSheet();} };
@@ -1205,6 +1238,7 @@ function drawSheet(){
   $('#resetIngs').onclick = ()=>document.querySelectorAll('.ings li').forEach(li=>li.classList.remove('done'));
   document.querySelectorAll('.ings li').forEach(li=>li.onclick=e=>{if(e.target.closest('.qty'))return; li.classList.toggle('done')});
   $('#startCook').onclick = startCook;
+  const edBtn=$('#editImp'); if(edBtn) edBtn.onclick=()=>{ closeSheet(); openImport(r); };
   const delBtn=$('#delImp');
   if(delBtn&&r.shared) delBtn.onclick=async()=>{
     if(!confirm('למחוק את המתכון מהאתר? זה יימחק לכולם.')) return;
@@ -1360,14 +1394,32 @@ function parseRecipeText(text){
   }
   out.mode='guess'; return out;
 }
-function setupTextPane(){
+function resizeImage(file){
+  return new Promise((res,rej)=>{
+    const fr=new FileReader();
+    fr.onerror=()=>rej(); fr.onload=()=>{
+      const im=new Image(); im.onerror=()=>rej();
+      im.onload=()=>{
+        let w=im.naturalWidth,h=im.naturalHeight; const m=800; const k=Math.min(1,m/Math.max(w,h)); w=Math.round(w*k); h=Math.round(h*k);
+        const c=document.createElement('canvas'); c.width=w; c.height=h; c.getContext('2d').drawImage(im,0,0,w,h);
+        let q=0.8, d=c.toDataURL('image/jpeg',q);
+        while(d.length>200000&&q>0.35){ q-=0.1; d=c.toDataURL('image/jpeg',q); }
+        d.length>230000?rej():res(d);
+      };
+      im.src=fr.result;
+    };
+    fr.readAsDataURL(file);
+  });
+}
+function setupTextPane(edit){
   const tabs=document.querySelectorAll('#impTabs button');
   tabs.forEach(b=>b.onclick=()=>{
     tabs.forEach(x=>x.classList.toggle('sel',x===b));
     $('#impLinkPane').hidden=b.dataset.t!=='link'; $('#impTextPane').hidden=b.dataset.t!=='text';
   });
-  let cat='m';
-  document.querySelectorAll('#txCats button').forEach(b=>b.onclick=()=>{cat=b.dataset.k; document.querySelectorAll('#txCats button').forEach(x=>x.classList.toggle('sel',x===b));});
+  let cat='m', imgData='', regen=false, removeImg=false;
+  const setCat=k=>{cat=k; document.querySelectorAll('#txCats button').forEach(x=>x.classList.toggle('sel',x.dataset.k===k));};
+  document.querySelectorAll('#txCats button').forEach(b=>b.onclick=()=>setCat(b.dataset.k));
   const lines=t=>t.split(/\r?\n/).map(x=>x.replace(/^\s*(?:[-*•▪●]|\d+[.)])\s*/,'').trim()).filter(Boolean);
   const doSplit=()=>{
     const raw=$('#txAll').value; const S=$('#txStatus');
@@ -1383,20 +1435,53 @@ function setupTextPane(){
   };
   $('#txSplit').onclick=doSplit;
   $('#txAll').addEventListener('paste',()=>{ setTimeout(()=>{ if(!$('#txTitle').value&&!$('#txIng').value&&!$('#txSteps').value) doSplit(); },50); });
-  $('#txAdd').onclick=()=>{
+  // image
+  const showPrev=src=>{ $('#txPrev').innerHTML=src?'<img src="'+src.replace(/"/g,'')+'" alt="" style="max-width:100%;max-height:200px;border-radius:12px;display:block;margin:.4rem 0">':''; };
+  $('#txFile').onchange=async e=>{
+    const f=e.target.files[0]; if(!f) return; const S=$('#txStatus');
+    try{ imgData=await resizeImage(f); regen=false; removeImg=false; showPrev(imgData); S.textContent='התמונה נטענה 👍'; }
+    catch(err){ imgData=''; S.innerHTML='<span class="imperr">לא הצלחנו לקרוא את התמונה. נסו קובץ אחר.</span>'; }
+  };
+  $('#txClearImg').onclick=()=>{ imgData=''; $('#txFile').value=''; showPrev(edit&&edit.img&&!removeImg?edit.img:''); };
+  if(edit){ $('#txRegen').onclick=()=>{ regen=true; imgData=''; $('#txStatus').textContent='בשמירה תיווצר תמונה אוטומטית חדשה 🎨'; }; }
+  // diet check
+  const runDiet=()=>{
+    const ing=lines($('#txIng').value), st=lines($('#txSteps').value);
+    $('#txDiet').innerHTML=dietHTML(dietIssues(ing,st),true);
+    $('#txDiet').querySelectorAll('[data-apply]').forEach(b=>b.onclick=()=>{
+      const it=dietIssues(ing,st)[+b.dataset.apply]; if(!it||!it.apply) return;
+      const arr=$('#txIng').value.split(/\r?\n/); const ix=arr.findIndex(x=>x.replace(/^\s*(?:[-*•▪●]|\d+[.)])\s*/,'').trim()===it.line);
+      if(ix>=0){ arr[ix]=arr[ix].replace(it.apply.re,it.apply.to); $('#txIng').value=arr.join('\n'); }
+      runDiet();
+    });
+  };
+  $('#txCheck').onclick=runDiet;
+  const doSave=()=>{
     const title=$('#txTitle').value.trim(), ing=lines($('#txIng').value), st=lines($('#txSteps').value), S=$('#txStatus');
     if(!title){S.innerHTML='<span class="imperr">חסר שם למתכון.</span>';return;}
     if(!ing.length){S.innerHTML='<span class="imperr">חסרים מצרכים.</span>';return;}
     if(!st.length){S.innerHTML='<span class="imperr">חסרים שלבי הכנה.</span>';return;}
     if(ing.length>80||st.length>80||title.length>120){S.innerHTML='<span class="imperr">הטקסט ארוך מדי.</span>';return;}
-    const sugs=[...new Set(ing.map(t=>dietCheck(t)).filter(Boolean))];
     const min=parseInt($('#txMin').value)||30, serve=Math.min(24,Math.max(1,parseInt($('#txServe').value)||4));
-    const btn=$('#txAdd'); btn.disabled=true; S.textContent='שומרים באתר… ⏳';
-    shareRecipe({t:title,ing,steps:st,min,serve,c:cat}).then(d=>{
+    const btn=$('#txAdd'); btn.disabled=true; S.textContent=(edit?'שומרים שינויים… ':'שומרים באתר… ')+(imgData||(edit&&edit.img&&!regen)?'⏳':'ויוצרים תמונה, זה לוקח כמה שניות ⏳');
+    const payload={t:title,ing,steps:st,min,serve,c:cat};
+    if(edit){ payload.d=edit.d&&edit.imported&&!edit.typed?edit.d:''; payload.src=edit.src||''; payload.source=edit.source||''; if(regen) payload.regen=1; }
+    if(imgData) payload.imgData=imgData;
+    shareRecipe(payload,edit?edit.id:null).then(d=>{
       if(!d.ok){ S.innerHTML='<span class="imperr">'+(SHARE_ERR[d.reason]||'השמירה נכשלה (אין חיבור או שגיאה בשרת). נסו שוב.')+'</span>'; btn.disabled=false; return; }
       render(); closeImport(); openRecipe(d.recipe.id);
     });
   };
+  $('#txAdd').onclick=doSave;
+  if(edit){
+    $('#impTabs').hidden=true; $('#impTitle').textContent='עריכת מתכון ✏️';
+    $('#impLinkPane').hidden=true; $('#impTextPane').hidden=false;
+    $('#txTitle').value=edit.t; $('#txMin').value=edit.min; $('#txServe').value=edit.serve;
+    $('#txIng').value=edit.ing.map(g=>g[2]).join('\n'); $('#txSteps').value=edit.steps.map(z=>z.t).join('\n');
+    setCat(edit.c||'m'); $('#txAdd').textContent='💾 שמירת שינויים';
+    showPrev(edit.img||'');
+    runDiet();
+  }
 }
 function localShareable(){ return custom.filter(x=>x&&x.t&&Array.isArray(x.ing)&&Array.isArray(x.steps)&&x.ing.every(g=>g&&g[0]==null)); }
 function setupMigrate(){
@@ -1416,7 +1501,7 @@ function setupMigrate(){
     if(!fail) $('#migGo').hidden=true; else btn.disabled=false;
   };
 }
-function openImport(){
+function openImport(edit){
   hideConvPop();
   $('#impInner').innerHTML=`
     <button class="close" id="impClose" aria-label="סגירה">✕</button>
@@ -1446,6 +1531,13 @@ function openImport(){
     <textarea class="impta" id="txIng" rows="6" placeholder="2 ביצים&#10;1 כוס קמח שקדים"></textarea>
     <label class="impfld" for="txSteps">אופן ההכנה (שורה לכל שלב)</label>
     <textarea class="impta" id="txSteps" rows="6"></textarea>
+    <div class="impfld">תמונה (לא חובה)</div>
+    <div class="hintline">אם לא מעלים תמונה, תיווצר תמונה אוטומטית (AI) - להמחשה בלבד, לא תמונה אמיתית של המנה.</div>
+    <input type="file" id="txFile" accept="image/*" style="margin:.4rem 0;max-width:100%">
+    <div id="txPrev"></div>
+    <div style="display:flex;gap:.6rem;flex-wrap:wrap"><button class="reset-ings" id="txClearImg" type="button">הסרת תמונה שנבחרה</button><button class="reset-ings" id="txRegen" type="button" hidden>🎨 תמונה אוטומטית חדשה</button></div>
+    <button class="reset-ings" id="txCheck" type="button" style="font-size:1rem;font-weight:700">🔎 בדיקת התאמה לתזונה והצעות לשינוי</button>
+    <div id="txDiet"></div>
     <div class="impstatus" id="txStatus" aria-live="polite"></div>
     <div class="impform"><button class="go" id="txAdd" type="button">✅ הוספה למתכונים שלנו</button></div>
     </div>`;
@@ -1453,8 +1545,9 @@ function openImport(){
   document.body.style.overflow='hidden';
   $('#impClose').onclick=closeImport;
   $('#impGo').onclick=runImport;
-  setupTextPane();
+  setupTextPane(edit);
   setupMigrate();
+  if(edit){ $('#txRegen').hidden=false; }
   $('#impUrl').focus();
 }
 function closeImport(){ $('#impSheet').classList.remove('open'); document.body.style.overflow=''; }
@@ -1560,4 +1653,4 @@ render();
 loadShared();
 </script>
 </body>
-</html>
+  </html>
