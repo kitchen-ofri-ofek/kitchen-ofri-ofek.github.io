@@ -1312,6 +1312,54 @@ function dietCheck(t){
   if(/sugar/i.test(t)&&!/coconut/i.test(t)) return 'סוכר ← מייפל או סילאן (כ־⅔ מהכמות)';
   return null;
 }
+function parseRecipeText(text){
+  const clean=x=>x.replace(/^\s*(?:[-*•▪●◦–]|\(?\d+[.)]|\d+\s*[-–]\s)\s*/,'').replace(/\s+/g,' ').trim();
+  let L=text.split(/\r?\n/).map(x=>x.replace(/[\u200e\u200f]/g,'').trim()).filter(Boolean);
+  const out={title:'',ing:[],steps:[],min:0,serve:0};
+  const ingH=/^(?:ה?מצרכים|ה?רכיבים|ה?חומרים|ה?מרכיבים)(?:\s+(?:ל|עבור).{0,30})?\s*:?$/;
+  const stH=/^(?:אופן\s+ה?הכנה|אופן\s+הכנת.{0,30}|ה?הוראות(?:\s+הכנה)?|ה?הכנה|שיטת\s+הכנה|דרך\s+(?:ה)?הכנה|אופן\s+העבודה)\s*:?$/;
+  const metaMin=/^(?:זמן(?:\s+(?:הכנה|אפייה|אפיה|בישול|עבודה|כולל))?|משך(?:\s+הכנה)?)\s*:?\s*(.*)$/;
+  const metaServe=/^(?:מנות|כמות|מספר\s+מנות|מתאים\s+ל|תשואה|יוצא|מספיק\s+ל)\s*:?\s*(.*)$/;
+  // meta lines
+  L=L.filter(l=>{
+    let m=l.match(metaMin);
+    if(m&&l.length<60&&/\d/.test(m[1])){ const n=m[1].match(/(\d+(?:\.\d+)?)\s*(שעות|שעה|ש'|דק)/); let mins=0; const h=m[1].match(/(\d+(?:\.\d+)?)\s*(?:שעות|שעה)/), d=m[1].match(/(\d+)\s*דק/); if(h)mins+=Math.round(parseFloat(h[1])*60); if(d)mins+=parseInt(d[1]); if(!mins){const q=m[1].match(/(\d+)/); mins=q?parseInt(q[1]):0;} if(mins){out.min=mins;return false;} }
+    m=l.match(metaServe);
+    if(m&&l.length<50&&/\d/.test(m[1])){ out.serve=parseInt(m[1].match(/\d+/)[0]); return false; }
+    return true;
+  });
+  const qty=/^(?:[\d½¼¾⅓⅔]|חצי|רבע|שליש|כוס|כוסות|כף|כפות|כפית|כפיות|קורט|מעט|קצת|שקית|שקיות|חבילה|גביע|פרוסה|פרוסות|שן|שיני|גרם|ק"ג|קילו|מ"ל|ליטר|יחידה|יחידות|אחוז|חופן|ענף|צרור|קופסה|קופסת|בקבוק|לפי\s+הטעם|להגשה|לקישוט|לשומן|לציפוי|לבריאות)/;
+  const verb=/^(?:מחממים|מערבבים|מוסיפים|אופים|מכניסים|מקציפים|מוזגים|מעבירים|מניחים|קוצצים|חותכים|טוחנים|שמים|מערבבים|מקפיאים|מצננים|מוציאים|מורחים|מפזרים|יוצרים|מכינים|מגלגלים|לשים|לשים|מרתיחים|מבשלים|מטגנים|מטגנת|מגישים|מסננים|מפרידים|מחלקים|מצפים|מרכיבים|שופכים|סוחטים|מועכים|ממיסים|מערבבות|מוסיפות|מחממות|מקפלים|מערבלים|מתבלים|מטבלים|מניחות|מרססים|מכסים|משאירים|מצננות|ממלאים|פותחים|מתחילים|בקערה|בקערה|בסיר|במחבת|בכלי|בבלנדר|בתבנית|מיד|לאחר|בסוף|לפני|כשה|כאשר|אחרי)\b/;
+  let i0=L.findIndex(l=>ingH.test(l.replace(/:$/,'')+':'.slice(0,0)) || ingH.test(l));
+  let s0=L.findIndex(l=>stH.test(l));
+  if(i0>=0&&s0>=0){
+    const head=L.slice(0,Math.min(i0,s0));
+    if(head.length) out.title=clean(head[0]);
+    const ing=i0<s0?L.slice(i0+1,s0):L.slice(i0+1), st=s0<i0?L.slice(s0+1,i0):L.slice(s0+1);
+    out.ing=ing.map(clean).filter(Boolean); out.steps=st.map(clean).filter(Boolean); out.mode='headings'; return out;
+  }
+  if(i0>=0||s0>=0){
+    const h=i0>=0?i0:s0; const head=L.slice(0,h); if(head.length) out.title=clean(head[0]);
+    const rest=L.slice(h+1).map(clean).filter(Boolean);
+    if(i0>=0){ // ingredients heading only: classify rest
+      let k=rest.findIndex(l=>l.length>45||/[.!]$/.test(l)||verb.test(l)&&!qty.test(l));
+      if(k<0)k=rest.length; out.ing=rest.slice(0,k); out.steps=rest.slice(k); out.mode='ing-heading';
+    } else { // steps heading only: lines before are ingredients
+      out.steps=rest; const pre=L.slice(0,h).map(clean).filter(Boolean);
+      if(pre.length>1&&!qty.test(pre[0])&&pre[0].length<60){ out.title=pre[0]; out.ing=pre.slice(1); } else out.ing=pre; out.mode='steps-heading';
+    }
+    return out;
+  }
+  // no headings: classify
+  let arr=L.map(clean).filter(Boolean);
+  if(arr.length&&!qty.test(arr[0])&&arr[0].length<=60&&!/[.!]$/.test(arr[0])&&!verb.test(arr[0])){ out.title=arr.shift(); }
+  let stepsStarted=false;
+  for(const l of arr){
+    const isStep=l.length>45||/[.!]$/.test(l)||(verb.test(l)&&!qty.test(l));
+    if(stepsStarted||isStep){ stepsStarted=true; out.steps.push(l); } else out.ing.push(l);
+  }
+  out.mode='guess'; return out;
+}
 function setupTextPane(){
   const tabs=document.querySelectorAll('#impTabs button');
   tabs.forEach(b=>b.onclick=()=>{
@@ -1321,19 +1369,20 @@ function setupTextPane(){
   let cat='m';
   document.querySelectorAll('#txCats button').forEach(b=>b.onclick=()=>{cat=b.dataset.k; document.querySelectorAll('#txCats button').forEach(x=>x.classList.toggle('sel',x===b));});
   const lines=t=>t.split(/\r?\n/).map(x=>x.replace(/^\s*(?:[-*•▪●]|\d+[.)])\s*/,'').trim()).filter(Boolean);
-  $('#txSplit').onclick=()=>{
-    const L=$('#txAll').value.split(/\r?\n/).map(x=>x.trim()).filter(Boolean);
-    if(!L.length) return;
-    const isIng=x=>/^(המצרכים|מצרכים|רכיבים|החומרים|חומרים)\s*:?$/.test(x);
-    const isSt=x=>/^(אופן ההכנה|אופן הכנה|הוראות הכנה|הוראות|הכנה|שיטת הכנה)\s*:?$/.test(x);
-    const i0=L.findIndex(isIng), s0=L.findIndex(isSt);
-    if(i0<0||s0<0){ $('#txStatus').innerHTML='<span class="imperr">לא מצאנו כותרות "מצרכים" ו"הכנה" בטקסט. מלאו את השדות ידנית.</span>'; return; }
-    const head=L.slice(0,Math.min(i0,s0));
-    if(head.length&&!$('#txTitle').value) $('#txTitle').value=head[0];
-    const ing=i0<s0?L.slice(i0+1,s0):L.slice(i0+1), st=s0<i0?L.slice(s0+1,i0):L.slice(s0+1);
-    $('#txIng').value=ing.join('\n'); $('#txSteps').value=st.join('\n');
-    $('#txStatus').textContent='הטקסט פוצל. בדקו ותקנו לפני ההוספה 👇';
+  const doSplit=()=>{
+    const raw=$('#txAll').value; const S=$('#txStatus');
+    if(!raw.trim()){ S.innerHTML='<span class="imperr">הדביקו קודם את המתכון בתיבה למעלה.</span>'; return; }
+    const r=parseRecipeText(raw);
+    if(!r.ing.length&&!r.steps.length){ S.innerHTML='<span class="imperr">לא הצלחנו לזהות מצרכים והכנה. מלאו את השדות ידנית.</span>'; return; }
+    if(r.title) $('#txTitle').value=r.title;
+    if(r.min) $('#txMin').value=r.min;
+    if(r.serve) $('#txServe').value=r.serve;
+    $('#txIng').value=r.ing.join('\n'); $('#txSteps').value=r.steps.join('\n');
+    S.textContent=(r.mode==='guess'||r.mode==='ing-heading'||r.mode==='steps-heading'?'פיצלנו לפי ניחוש (אין כותרות "מצרכים" ו"הכנה" ברורות) - בדקו שכל שורה במקום הנכון. ':'הטקסט פוצל. ')+'מצרכים: '+r.ing.length+', שלבים: '+r.steps.length+' 👇';
+    $('#txTitle').scrollIntoView({block:'center'});
   };
+  $('#txSplit').onclick=doSplit;
+  $('#txAll').addEventListener('paste',()=>{ setTimeout(()=>{ if(!$('#txTitle').value&&!$('#txIng').value&&!$('#txSteps').value) doSplit(); },50); });
   $('#txAdd').onclick=()=>{
     const title=$('#txTitle').value.trim(), ing=lines($('#txIng').value), st=lines($('#txSteps').value), S=$('#txStatus');
     if(!title){S.innerHTML='<span class="imperr">חסר שם למתכון.</span>';return;}
@@ -1387,7 +1436,7 @@ function openImport(){
     <p style="color:var(--muted)">כותבים או מדביקים מתכון. המתכון נשמר באתר ויופיע לכל מי שפותח אותו. אפשר להדביק מתכון שלם בתיבה הראשונה (עם כותרות "מצרכים" ו"הכנה") ולמלא את השדות אוטומטית, או למלא כל שדה בנפרד. שורה אחת לכל מצרך ולכל שלב.</p>
     <label class="impfld" for="txAll">הדבקת מתכון שלם (לא חובה)</label>
     <textarea class="impta" id="txAll" rows="4" placeholder="שם המתכון&#10;מצרכים&#10;2 ביצים&#10;הכנה&#10;מערבבים ואופים"></textarea>
-    <button class="reset-ings" id="txSplit" type="button">פיצול אוטומטי לשדות ⤵</button>
+    <button class="reset-ings" id="txSplit" type="button" style="font-size:1rem;font-weight:700">פיצול אוטומטי לשדות ⤵</button>
     <label class="impfld" for="txTitle">שם המתכון</label>
     <input class="impta" id="txTitle" type="text">
     <div class="impnums"><label class="impfld">זמן (דקות)<input class="impta" id="txMin" type="number" inputmode="numeric" min="1" dir="ltr"></label><label class="impfld">מנות<input class="impta" id="txServe" type="number" inputmode="numeric" min="1" dir="ltr" value="4"></label></div>
