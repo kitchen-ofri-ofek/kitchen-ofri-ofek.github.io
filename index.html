@@ -970,6 +970,24 @@ let state = {cat:'all', fast:false, gfOnly:false, vgOnly:false, favOnly:false, c
 let favs = new Set(JSON.parse(localStorage.getItem('rcp-favs')||'[]'));
 let custom = JSON.parse(localStorage.getItem('rcp-custom')||'[]');
 RECIPES.push(...custom);
+const SHARED_API='https://recipes-import-api.mqog1v.workers.dev/recipes';
+let sharedDt=JSON.parse(localStorage.getItem('rcp-shared-dt')||'{}');
+function sharedToRecipe(x){ return {id:x.id,t:x.t,d:'מתכון משותף שהוקלד באתר',c:x.c||'m',min:x.min||30,serve:x.serve||4,gf:false,vg:false,
+  ing:x.ing.map(t=>[null,null,t]),steps:x.steps.map(t=>({t})),img:'',imported:true,typed:true,shared:true,
+  sub:(()=>{const u=[...new Set(x.ing.map(t=>dietCheck(t)).filter(Boolean))];return u.length?('המתכון הוזן ידנית ולא לגמרי מתאים לכללים. תחליפים מומלצים: '+u.join('; ')):null;})()}; }
+function applyShared(list){
+  for(let i=RECIPES.length-1;i>=0;i--) if(RECIPES[i].shared) RECIPES.splice(i,1);
+  list.forEach(x=>{ try{ RECIPES.push(sharedToRecipe(x)); }catch(e){} });
+}
+async function loadShared(){
+  try{ const c=JSON.parse(localStorage.getItem('rcp-shared-cache')||'null'); if(c){ applyShared(c); render(); } }catch(e){}
+  try{
+    const ctl=new AbortController(); const to=setTimeout(()=>ctl.abort(),15000);
+    const r=await fetch(SHARED_API+'?t='+Date.now(),{signal:ctl.signal}); clearTimeout(to);
+    const d=await r.json();
+    if(d.ok&&Array.isArray(d.recipes)){ localStorage.setItem('rcp-shared-cache',JSON.stringify(d.recipes)); applyShared(d.recipes); render(); }
+  }catch(e){}
+}
 function saveCustom(){localStorage.setItem('rcp-custom',JSON.stringify(custom));}
 let servings = {};
 let current = null, stepIdx = 0, wakeLock = null;
@@ -1144,7 +1162,7 @@ function drawSheet(){
     <div class="meta"><span>📂 ${CATS[r.c]}</span><span>⏱ ${r.min} דקות</span>
       <button class="fav" style="position:static" data-fav="${r.id}" aria-pressed="${favs.has(r.id)}" aria-label="שמירה למועדפים">${favs.has(r.id)?'❤️':'🤍'}</button>
     </div>
-    <div>${r.gf?'<span class="badge gf">ללא גלוטן</span>':''}${r.vg?'<span class="badge vg">טבעוני</span>':''}${r.cut?'<span class="badge cut">💪 חיטוב</span>':''}${r.ninja?'<span class="badge ninja">🔥 נינג׳ה גריל</span>':''}${r.src?'<span class="badge imp">על פי אסי רוז</span>':''}${r.imported?'<span class="badge imp">מיובא 🔗</span>':''}${r.translated?'<span class="badge imp">תורגם אוטומטית 🌐</span>':''}</div>
+    <div>${r.gf?'<span class="badge gf">ללא גלוטן</span>':''}${r.vg?'<span class="badge vg">טבעוני</span>':''}${r.cut?'<span class="badge cut">💪 חיטוב</span>':''}${r.ninja?'<span class="badge ninja">🔥 נינג׳ה גריל</span>':''}${r.src?'<span class="badge imp">על פי אסי רוז</span>':''}${r.imported?(r.typed?'<span class="badge imp">הוקלד ✍️</span>':'<span class="badge imp">מיובא 🔗</span>'):''}${r.translated?'<span class="badge imp">תורגם אוטומטית 🌐</span>':''}</div>
     <p style="margin-top:.4rem;color:var(--muted)">${esc(r.d)}</p>
     ${r.sub?`<div class="subnote"><b>התאמה למטבח שלנו:</b> ${esc(r.sub)}</div>`:''}
     ${r.src?`<div class="subnote">על פי <a href="${r.src}" target="_blank" rel="noopener" style="color:inherit"><b>אסי רוז</b></a> · ${r.imported?'המצרכים והשלבים מועתקים כלשהם מהמקור':'ההוראות נכתבו מחדש בשפה שלנו'} · <a href="${r.src}" target="_blank" rel="noopener" style="color:inherit">למתכון המקורי</a></div>`:''}
@@ -1165,7 +1183,7 @@ function drawSheet(){
     </ol>
     ${r.tip?`<div class="tip">💡 ${esc(r.tip)}</div>`:''}
     <button class="cook-cta" id="startCook">👨‍🍳 מצב בישול - צעד אחר צעד</button>
-    ${r.imported?`<button class="reset-ings" id="delImp" style="color:#b00">מחיקת מתכון מיובא 🗑</button>`:''}
+    ${r.shared?(sharedDt[r.id]?`<button class="reset-ings" id="delImp" style="color:#b00">מחיקת המתכון מהאתר (לכולם) 🗑</button>`:''):(r.imported?`<button class="reset-ings" id="delImp" style="color:#b00">מחיקת מתכון מיובא 🗑</button>`:'')}
   `;
   $('#sheetClose').onclick = closeSheet;
   $('#srvMinus').onclick = ()=>{ if(servings[r.id]>1){servings[r.id]--; drawSheet();} };
@@ -1175,7 +1193,14 @@ function drawSheet(){
   document.querySelectorAll('.ings li').forEach(li=>li.onclick=e=>{if(e.target.closest('.qty'))return; li.classList.toggle('done')});
   $('#startCook').onclick = startCook;
   const delBtn=$('#delImp');
-  if(delBtn) delBtn.onclick=()=>{ custom=custom.filter(x=>x.id!==r.id); const ix=RECIPES.findIndex(x=>x.id===r.id); if(ix>=0)RECIPES.splice(ix,1); saveCustom(); closeSheet(); render(); };
+  if(delBtn&&r.shared) delBtn.onclick=async()=>{
+    if(!confirm('למחוק את המתכון מהאתר? זה יימחק לכולם.')) return;
+    try{ const rs=await fetch(SHARED_API+'?id='+encodeURIComponent(r.id)+'&dt='+encodeURIComponent(sharedDt[r.id]),{method:'DELETE'}); const d=await rs.json(); if(!d.ok&&d.reason!=='not_found') throw 0;
+      delete sharedDt[r.id]; localStorage.setItem('rcp-shared-dt',JSON.stringify(sharedDt));
+      const ix=RECIPES.findIndex(x=>x.id===r.id); if(ix>=0)RECIPES.splice(ix,1);
+      try{ const c=JSON.parse(localStorage.getItem('rcp-shared-cache')||'[]').filter(x=>x.id!==r.id); localStorage.setItem('rcp-shared-cache',JSON.stringify(c)); }catch(e){}
+      closeSheet(); render(); }catch(e){ alert('המחיקה נכשלה, נסו שוב.'); } };
+  else if(delBtn) delBtn.onclick=()=>{ custom=custom.filter(x=>x.id!==r.id); const ix=RECIPES.findIndex(x=>x.id===r.id); if(ix>=0)RECIPES.splice(ix,1); saveCustom(); closeSheet(); render(); };
 }
 
 // ================= COOK MODE =================
@@ -1304,10 +1329,17 @@ function setupTextPane(){
     if(ing.length>80||st.length>80||title.length>120){S.innerHTML='<span class="imperr">הטקסט ארוך מדי.</span>';return;}
     const sugs=[...new Set(ing.map(t=>dietCheck(t)).filter(Boolean))];
     const min=parseInt($('#txMin').value)||30, serve=Math.min(24,Math.max(1,parseInt($('#txServe').value)||4));
-    const nr={id:'imp-'+Date.now(), t:title, d:'מתכון שהוקלד ידנית', c:cat, min, serve, gf:false, vg:false,
-      ing:ing.map(t=>[null,null,t]), steps:st.map(t=>({t})), img:'', imported:true, typed:true,
-      sub:sugs.length?('המתכון הוזן ידנית ולא לגמרי מתאים לכללים. תחליפים מומלצים: '+sugs.join('; ')):null};
-    custom.push(nr); RECIPES.push(nr); saveCustom(); render(); closeImport(); openRecipe(nr.id);
+    const btn=$('#txAdd'); btn.disabled=true; S.textContent='שומרים באתר… ⏳';
+    fetch(SHARED_API,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({t:title,ing,steps:st,min,serve,c:cat})})
+      .then(r=>r.json().catch(()=>({ok:false}))).then(d=>{
+        if(!d.ok){
+          const m={rate:'הוספת יותר מדי מתכונים בשעה האחרונה. נסו שוב מאוחר יותר.',full:'האתר הגיע למקסימום מתכונים משותפים.',duplicate:'המתכון הזה כבר קיים באתר.',too_big:'המתכון ארוך מדי.'}[d.reason]||'השמירה נכשלה (אין חיבור או שגיאה בשרת). נסו שוב.';
+          S.innerHTML='<span class="imperr">'+m+'</span>'; btn.disabled=false; return;
+        }
+        sharedDt[d.recipe.id]=d.dt; localStorage.setItem('rcp-shared-dt',JSON.stringify(sharedDt));
+        const cache=JSON.parse(localStorage.getItem('rcp-shared-cache')||'[]'); cache.push(d.recipe); localStorage.setItem('rcp-shared-cache',JSON.stringify(cache));
+        RECIPES.push(sharedToRecipe(d.recipe)); render(); closeImport(); openRecipe(d.recipe.id);
+      }).catch(()=>{ S.innerHTML='<span class="imperr">השמירה נכשלה (אין חיבור). נסו שוב.</span>'; btn.disabled=false; });
   };
 }
 function openImport(){
@@ -1326,7 +1358,7 @@ function openImport(){
     <div id="impPreview"></div>
     </div>
     <div id="impTextPane" hidden>
-    <p style="color:var(--muted)">כותבים או מדביקים מתכון. אפשר להדביק מתכון שלם בתיבה הראשונה (עם כותרות "מצרכים" ו"הכנה") ולמלא את השדות אוטומטית, או למלא כל שדה בנפרד. שורה אחת לכל מצרך ולכל שלב.</p>
+    <p style="color:var(--muted)">כותבים או מדביקים מתכון. המתכון נשמר באתר ויופיע לכל מי שפותח אותו. אפשר להדביק מתכון שלם בתיבה הראשונה (עם כותרות "מצרכים" ו"הכנה") ולמלא את השדות אוטומטית, או למלא כל שדה בנפרד. שורה אחת לכל מצרך ולכל שלב.</p>
     <label class="impfld" for="txAll">הדבקת מתכון שלם (לא חובה)</label>
     <textarea class="impta" id="txAll" rows="4" placeholder="שם המתכון&#10;מצרכים&#10;2 ביצים&#10;הכנה&#10;מערבבים ואופים"></textarea>
     <button class="reset-ings" id="txSplit" type="button">פיצול אוטומטי לשדות ⤵</button>
@@ -1449,6 +1481,7 @@ document.addEventListener('visibilitychange', ()=>{ if(document.visibilityState=
 
 renderGuide();
 render();
+loadShared();
 </script>
 </body>
-  </html>
+</html>
