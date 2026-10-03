@@ -193,6 +193,11 @@ html[data-contrast="high"] .subnote{background:#fff; border:2px solid var(--acce
 }
 .ings li.done .box{background:var(--accent);}
 .ings li.done .txt{text-decoration:line-through; color:var(--muted);}
+.rcp-actions{display:flex;flex-wrap:wrap;gap:.2rem 1rem;margin-top:.4rem}
+.trashbox{margin:1.2rem auto 0;max-width:720px;padding:.6rem .9rem;border:1px dashed #cdbba5;border-radius:12px;font-size:.95rem}
+.trashbox summary{cursor:pointer;color:var(--muted);min-height:44px;display:flex;align-items:center}
+.trow{display:flex;justify-content:space-between;align-items:center;gap:.6rem;padding:.35rem 0;border-top:1px solid #eadfce}
+.trow span{overflow-wrap:anywhere}
 .reset-ings{font-size:.85rem; color:var(--accent); text-decoration:underline; margin-top:.3rem;}
 
 .steps{list-style:none; counter-reset:st;}
@@ -1082,6 +1087,9 @@ const TIPS = [
 let state = {cat:'all', fast:false, gfOnly:false, vgOnly:false, favOnly:false, cutOnly:false, ninjaOnly:false, q:''};
 let favs = new Set(JSON.parse(localStorage.getItem('rcp-favs')||'[]'));
 let custom = JSON.parse(localStorage.getItem('rcp-custom')||'[]');
+const ORIG=JSON.parse(JSON.stringify(RECIPES)); const ORIGIDS=new Set(ORIG.map(r=>r.id));
+let OVR={}, TRASH=[];
+try{ const c=JSON.parse(localStorage.getItem('rcp-ovr-cache')||'null'); if(c){ OVR=c.ovr||{}; TRASH=c.trash||[]; } }catch(e){}
 RECIPES.push(...custom);
 const SHARED_API='https://recipes-import-api.mqog1v.workers.dev/recipes';
 let sharedDt=JSON.parse(localStorage.getItem('rcp-shared-dt')||'{}');
@@ -1113,7 +1121,7 @@ function recipeSubHTML(r){
   return r.sub?`<div class="subnote"><b>התאמה למטבח שלנו:</b> ${esc(r.sub)}</div>`:'';
 }
 function sharedToRecipe(x){ const ext=!!(x.src||x.source); return {id:x.id,t:x.t,d:x.d||(ext?'מתכון משותף שיובא מקישור':'מתכון משותף שהוקלד באתר'),c:x.c||'m',min:x.min||30,serve:x.serve||4,gf:false,vg:false,
-  ing:x.ing.map(t=>[null,null,t]),steps:x.steps.map(t=>({t})),img:x.img||'',ig:x.ig||0,ed:x.ed||0,imported:true,typed:!ext,shared:true,src:x.src||undefined,source:x.source||undefined,
+  ing:x.ing.map(t=>[null,null,t]),steps:x.steps.map(t=>({t})),img:x.img||'',ig:x.ig||0,ed:x.ed||0,imported:true,typed:!ext,shared:true,hp:x.hp||0,src:x.src||undefined,source:x.source||undefined,
   sub:(()=>{const u=[...new Set(x.ing.map(t=>dietCheck(t)).filter(Boolean))];return u.length?((ext?'המתכון יובא מבחוץ':'המתכון הוזן ידנית')+' ולא לגמרי מתאים לכללים. תחליפים מומלצים: '+u.join('; ')):null;})()}; }
 const SHARE_ERR={bad_image:'התמונה לא תקינה או גדולה מדי.',forbidden:'אין הרשאה לערוך את המתכון הזה מהמכשיר הזה.',not_found:'המתכון כבר לא קיים באתר.',rate:'הוספת יותר מדי מתכונים בשעה האחרונה. נסו שוב מאוחר יותר.',full:'האתר הגיע למקסימום מתכונים משותפים.',duplicate:'המתכון הזה כבר קיים באתר.',too_big:'המתכון ארוך מדי.'};
 function cacheShared(rec){
@@ -1122,9 +1130,10 @@ function cacheShared(rec){
   try{ localStorage.setItem('rcp-shared-cache',JSON.stringify(cache)); }catch(e){}
 }
 function shareRecipe(payload,editId){
-  const url=editId?(SHARED_API+'?id='+encodeURIComponent(editId)+'&dt='+encodeURIComponent(sharedDt[editId]||'')):SHARED_API;
+  const url=editId?(SHARED_API+'?id='+encodeURIComponent(editId)):SHARED_API;
   return fetch(url,{method:editId?'PUT':'POST',headers:{'content-type':'application/json'},body:JSON.stringify(payload)})
     .then(r=>r.json().catch(()=>({ok:false}))).then(d=>{
+      if(d.ok&&editId&&ORIGIDS.has(editId)){ OVR[editId]=d.ovr||{}; cacheOvr(); applyOvr(); d.recipe={id:editId}; return d; }
       if(d.ok){
         if(!editId){ sharedDt[d.recipe.id]=d.dt; localStorage.setItem('rcp-shared-dt',JSON.stringify(sharedDt)); }
         cacheShared(d.recipe);
@@ -1134,18 +1143,50 @@ function shareRecipe(payload,editId){
       return d;
     }).catch(()=>({ok:false,reason:'net'}));
 }
+function cacheOvr(){ try{ localStorage.setItem('rcp-ovr-cache',JSON.stringify({ovr:OVR,trash:TRASH})); }catch(e){} }
+function mergeEdit(o,v){
+  const e=v.e, r=JSON.parse(JSON.stringify(o));
+  r.t=e.t; r.c=e.c; r.min=e.min; r.serve=e.serve; r.d=e.d||o.d;
+  const m=new Map(o.ing.map(g=>[ingText(g,1),g])), sm=new Map(o.steps.map(z=>[z.t,z]));
+  r.ing=e.ing.map(t=>m.get(t)||[null,null,t]); r.steps=e.steps.map(t=>sm.get(t)||{t});
+  if(e.img){ r.img=e.img; r.ig=e.ig?1:0; }
+  r.gf=0; r.vg=0; r.cut=0; r.ninja=0; r.sub=null; r.edited=true; r.hp=v.hp?1:0;
+  return r;
+}
+function applyOvr(){
+  const others=RECIPES.filter(r=>!ORIGIDS.has(r.id)), cur=[];
+  ORIG.forEach(o=>{ const v=OVR[o.id]; if(v&&v.del) return; cur.push(v&&v.e?mergeEdit(o,v):JSON.parse(JSON.stringify(o))); });
+  RECIPES.length=0; RECIPES.push(...cur,...others);
+  renderTrash();
+}
+function trashItems(){
+  const a=TRASH.map(x=>({id:x.id,t:x.t,del:x.del}));
+  Object.keys(OVR).forEach(id=>{ if(OVR[id]&&OVR[id].del){ const o=ORIG.find(z=>z.id===id); if(o) a.push({id,t:(OVR[id].e&&OVR[id].e.t)||o.t,del:OVR[id].del}); } });
+  return a.sort((x,y)=>y.del-x.del);
+}
+function renderTrash(){
+  let b=document.getElementById('trashBox'); if(!b){ b=document.createElement('div'); b.id='trashBox'; grid.parentNode.insertBefore(b,grid.nextSibling); }
+  const it=trashItems(); if(!it.length){ b.innerHTML=''; return; }
+  b.innerHTML='<details class="trashbox"><summary>🗑 מתכונים שנמחקו ('+it.length+')</summary>'+it.map(x=>'<div class="trow"><span>'+esc(x.t)+'</span><button class="reset-ings" data-restore="'+esc(x.id)+'">↩ שחזור</button></div>').join('')+'</details>';
+  b.querySelectorAll('[data-restore]').forEach(btn=>btn.onclick=async()=>{ btn.disabled=true; const d=await recipeAction('restore',btn.dataset.restore); if(!d.ok) alert('השחזור נכשל, נסו שוב.'); render(); });
+}
+async function recipeAction(action,id){
+  try{ const r=await fetch(SHARED_API+'?action='+action+'&id='+encodeURIComponent(id),{method:'POST'}); const d=await r.json(); if(d.ok) await syncShared(); return d; }catch(e){ return {ok:false}; }
+}
 function applyShared(list){
   for(let i=RECIPES.length-1;i>=0;i--) if(RECIPES[i].shared) RECIPES.splice(i,1);
   list.forEach(x=>{ try{ RECIPES.push(sharedToRecipe(x)); }catch(e){} });
 }
+async function syncShared(){
+  const ctl=new AbortController(); const to=setTimeout(()=>ctl.abort(),15000);
+  const r=await fetch(SHARED_API+'?t='+Date.now(),{signal:ctl.signal}); clearTimeout(to);
+  const d=await r.json();
+  if(d.ok&&Array.isArray(d.recipes)){ localStorage.setItem('rcp-shared-cache',JSON.stringify(d.recipes)); applyShared(d.recipes); OVR=d.ovr||{}; TRASH=d.trash||[]; cacheOvr(); applyOvr(); render(); }
+}
 async function loadShared(){
-  try{ const c=JSON.parse(localStorage.getItem('rcp-shared-cache')||'null'); if(c){ applyShared(c); render(); } }catch(e){}
-  try{
-    const ctl=new AbortController(); const to=setTimeout(()=>ctl.abort(),15000);
-    const r=await fetch(SHARED_API+'?t='+Date.now(),{signal:ctl.signal}); clearTimeout(to);
-    const d=await r.json();
-    if(d.ok&&Array.isArray(d.recipes)){ localStorage.setItem('rcp-shared-cache',JSON.stringify(d.recipes)); applyShared(d.recipes); render(); }
-  }catch(e){}
+  try{ const c=JSON.parse(localStorage.getItem('rcp-shared-cache')||'null'); if(c){ applyShared(c); } }catch(e){}
+  applyOvr(); render();
+  try{ await syncShared(); }catch(e){}
 }
 function saveCustom(){localStorage.setItem('rcp-custom',JSON.stringify(custom));}
 let servings = {};
@@ -1299,6 +1340,7 @@ function toggleFav(id){
 }
 
 // ================= RECIPE SHEET =================
+function drawSheetFor(id){ const r=RECIPES.find(x=>x.id===id); if(!r){ closeSheet(); return; } current=r; drawSheet(); }
 function openRecipe(id){
   current = RECIPES.find(r=>r.id===id);
   servings[id] = servings[id] || current.serve;
@@ -1342,7 +1384,7 @@ function drawSheet(){
     </ol>
     ${r.tip?`<div class="tip">💡 ${esc(r.tip)}</div>`:''}
     <button class="cook-cta" id="startCook">👨‍🍳 מצב בישול - צעד אחר צעד</button>
-    ${r.shared&&sharedDt[r.id]?`<button class="reset-ings" id="editImp">✏️ עריכת מתכון</button>`:''}${r.shared?(sharedDt[r.id]?`<button class="reset-ings" id="delImp" style="color:#b00">מחיקת המתכון מהאתר (לכולם) 🗑</button>`:''):(r.imported?`<button class="reset-ings" id="delImp" style="color:#b00">מחיקת מתכון מיובא 🗑</button>`:'')}
+    <div class="rcp-actions">${(r.shared||ORIGIDS.has(r.id))?`<button class="reset-ings" id="editImp">✏️ עריכת מתכון</button>`:''}${r.hp?`<button class="reset-ings" id="undoImp">↩ ביטול העריכה האחרונה</button>`:''}${r.edited?`<button class="reset-ings" id="origImp">↩ חזרה למתכון המקורי</button>`:''}${(r.shared||ORIGIDS.has(r.id))?`<button class="reset-ings" id="delImp" style="color:#b00">מחיקת המתכון 🗑</button>`:(r.imported?`<button class="reset-ings" id="delImp" style="color:#b00">מחיקת מתכון מיובא 🗑</button>`:'')}</div>
   `;
   $('#sheetClose').onclick = closeSheet;
   $('#srvMinus').onclick = ()=>{ if(servings[r.id]>1){servings[r.id]--; drawSheet();} };
@@ -1353,13 +1395,14 @@ function drawSheet(){
   $('#startCook').onclick = startCook;
   const edBtn=$('#editImp'); if(edBtn) edBtn.onclick=()=>{ closeSheet(); openImport(r); };
   const delBtn=$('#delImp');
-  if(delBtn&&r.shared) delBtn.onclick=async()=>{
-    if(!confirm('למחוק את המתכון מהאתר? זה יימחק לכולם.')) return;
-    try{ const rs=await fetch(SHARED_API+'?id='+encodeURIComponent(r.id)+'&dt='+encodeURIComponent(sharedDt[r.id]),{method:'DELETE'}); const d=await rs.json(); if(!d.ok&&d.reason!=='not_found') throw 0;
-      delete sharedDt[r.id]; localStorage.setItem('rcp-shared-dt',JSON.stringify(sharedDt));
-      const ix=RECIPES.findIndex(x=>x.id===r.id); if(ix>=0)RECIPES.splice(ix,1);
+  const un=$('#undoImp'); if(un) un.onclick=async()=>{ if(!confirm('לבטל את העריכה האחרונה ולחזור לגרסה שלפניה?')) return; un.disabled=true; const d=await recipeAction('undo',r.id); if(!d.ok){ alert('הפעולה נכשלה, נסו שוב.'); un.disabled=false; return; } render(); drawSheetFor(r.id); };
+  const og=$('#origImp'); if(og) og.onclick=async()=>{ if(!confirm('לחזור למתכון המקורי? העריכות שלכם יימחקו.')) return; og.disabled=true; const d=await recipeAction('original',r.id); if(!d.ok){ alert('הפעולה נכשלה, נסו שוב.'); og.disabled=false; return; } render(); drawSheetFor(r.id); };
+  if(delBtn&&(r.shared||ORIGIDS.has(r.id))) delBtn.onclick=async()=>{
+    if(!confirm('למחוק את "'+r.t+'"? המתכון ייעלם לכולם. אפשר לשחזר אותו תוך רגע מהרשימה "מתכונים שנמחקו" בתחתית הדף.')) return;
+    delBtn.disabled=true;
+    try{ const rs=await fetch(SHARED_API+'?id='+encodeURIComponent(r.id),{method:'DELETE'}); const d=await rs.json(); if(!d.ok&&d.reason!=='not_found') throw 0;
       try{ const c=JSON.parse(localStorage.getItem('rcp-shared-cache')||'[]').filter(x=>x.id!==r.id); localStorage.setItem('rcp-shared-cache',JSON.stringify(c)); }catch(e){}
-      closeSheet(); render(); }catch(e){ alert('המחיקה נכשלה, נסו שוב.'); } };
+      closeSheet(); try{ await syncShared(); }catch(e){ const ix=RECIPES.findIndex(x=>x.id===r.id); if(ix>=0)RECIPES.splice(ix,1); } render(); renderTrash(); }catch(e){ delBtn.disabled=false; alert('המחיקה נכשלה, נסו שוב.'); } };
   else if(delBtn) delBtn.onclick=()=>{ custom=custom.filter(x=>x.id!==r.id); const ix=RECIPES.findIndex(x=>x.id===r.id); if(ix>=0)RECIPES.splice(ix,1); saveCustom(); closeSheet(); render(); };
 }
 
@@ -1578,7 +1621,7 @@ function setupTextPane(edit){
     const min=parseInt($('#txMin').value)||30, serve=Math.min(24,Math.max(1,parseInt($('#txServe').value)||4));
     const btn=$('#txAdd'); btn.disabled=true; S.textContent=(edit?'שומרים שינויים… ':'שומרים באתר… ')+(imgData||(edit&&edit.img&&!regen)?'⏳':'ויוצרים תמונה, זה לוקח כמה שניות ⏳');
     const payload={t:title,ing,steps:st,min,serve,c:cat};
-    if(edit){ payload.d=edit.d&&edit.imported&&!edit.typed?edit.d:''; payload.src=edit.src||''; payload.source=edit.source||''; if(regen) payload.regen=1; }
+    if(edit){ payload.d=edit.d&&((edit.imported&&!edit.typed)||ORIGIDS.has(edit.id))?edit.d:''; payload.src=edit.src||''; payload.source=edit.source||''; if(regen) payload.regen=1; }
     if(imgData) payload.imgData=imgData;
     shareRecipe(payload,edit?edit.id:null).then(d=>{
       if(!d.ok){ S.innerHTML='<span class="imperr">'+(SHARE_ERR[d.reason]||'השמירה נכשלה (אין חיבור או שגיאה בשרת). נסו שוב.')+'</span>'; btn.disabled=false; return; }
@@ -1590,9 +1633,9 @@ function setupTextPane(edit){
     $('#impTabs').hidden=true; $('#impTitle').textContent='עריכת מתכון ✏️';
     $('#impLinkPane').hidden=true; $('#impTextPane').hidden=false;
     $('#txTitle').value=edit.t; $('#txMin').value=edit.min; $('#txServe').value=edit.serve;
-    $('#txIng').value=edit.ing.map(g=>g[2]).join('\n'); $('#txSteps').value=edit.steps.map(z=>z.t).join('\n');
+    $('#txIng').value=edit.ing.map(g=>ingText(g,1)).join('\n'); $('#txSteps').value=edit.steps.map(z=>z.t).join('\n');
     setCat(edit.c||'m'); $('#txAdd').textContent='💾 שמירת שינויים';
-    showPrev(edit.img||'');
+    showPrev(edit.img||IMG[edit.id]||'');
     runDiet();
   }
 }
