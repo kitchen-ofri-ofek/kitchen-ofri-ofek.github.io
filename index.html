@@ -1772,7 +1772,7 @@ async function runImport(){
   };
   st.textContent='נמצא מתכון! בדקו לפני שמוסיפים 👇';
 }
-$('#impBtn').onclick=openImport;
+$('#impBtn').onclick=()=>openImport();
 
 function renderGuide(){
   $('#flours').innerHTML = FLOURS.map(f=>`<div class="guidecard"><b>${esc(f.n)}</b><p>${esc(f.d)}</p></div>`).join('');
@@ -1809,4 +1809,4 @@ render();
 loadShared();
 </script>
 </body>
-  </html>
+    </html>
