@@ -284,6 +284,25 @@ html[data-contrast="high"] .subnote{background:#fff; border:2px solid var(--acce
 .impcats{display:flex; gap:.4rem; flex-wrap:wrap; margin:.5rem 0;}
 .impcats button{border:1.5px solid var(--accent); background:transparent; border-radius:999px; padding:.3rem .8rem; cursor:pointer;}
 .impcats button.sel{background:var(--accent); color:#fff;}
+
+/* ===== App-like transitions ===== */
+.chip{transition:background-color .22s ease, color .22s ease, border-color .22s ease, transform .14s ease;}
+.chip:active{transform:scale(.94);}
+.card{transition:transform .16s ease, box-shadow .16s ease;}
+.card:active{transform:scale(.975);}
+button{transition:transform .14s ease;}
+button:active{transform:scale(.93);}
+.sheet.open{animation:sheetIn .32s cubic-bezier(.2,.85,.3,1);}
+@keyframes sheetIn{from{transform:translateY(4.5%); opacity:0;} to{transform:none; opacity:1;}}
+.sheet.closing{display:block; animation:sheetOut .24s ease-in forwards; pointer-events:none;}
+.cook.open{animation:sheetIn .32s cubic-bezier(.2,.85,.3,1);}
+.cook.closing{display:flex; animation:sheetOut .24s ease-in forwards; pointer-events:none;}
+@keyframes sheetOut{from{transform:none; opacity:1;} to{transform:translateY(4.5%); opacity:0;}}
+.cook-body.stepIn{animation:stepIn .26s ease;}
+@keyframes stepIn{from{opacity:0; transform:translateY(8px);} to{opacity:1; transform:none;}}
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation-duration:.01ms!important; animation-delay:0ms!important; transition-duration:.01ms!important;}
+}
 </style>
 </head>
 <body>
@@ -1573,17 +1592,28 @@ function toggleFav(id){
 
 // ================= RECIPE SHEET =================
 function drawSheetFor(id){ const r=RECIPES.find(x=>x.id===id); if(!r){ closeSheet(); return; } current=r; drawSheet(); }
+let savedScroll = 0, sheetPushed = false, cookPushed = false;
 function openRecipe(id){
   current = RECIPES.find(r=>r.id===id);
   servings[id] = servings[id] || current.serve;
   drawSheet();
+  savedScroll = window.scrollY;
+  try{ history.pushState({rcp:id}, ''); sheetPushed = true; }catch(e){ sheetPushed = false; }
   $('#sheet').classList.add('open');
   document.body.style.overflow='hidden';
   $('#sheet .close').focus();
 }
-function closeSheet(){
-  $('#sheet').classList.remove('open');
+function hideSheet(){
+  const s = $('#sheet');
+  s.classList.remove('open');
+  s.classList.add('closing');
+  setTimeout(()=>s.classList.remove('closing'), 250);
   document.body.style.overflow='';
+}
+function closeSheet(){
+  if(sheetPushed){ sheetPushed = false; history.back(); return; }
+  hideSheet();
+  window.scrollTo(0, savedScroll);
 }
 function drawSheet(){
   const r = current;
@@ -1642,17 +1672,26 @@ function drawSheet(){
 function startCook(){
   stepIdx = 0;
   drawCook();
+  try{ history.pushState({cook:1}, ''); cookPushed = true; }catch(e){ cookPushed = false; }
   $('#cook').classList.add('open');
   requestWake();
   $('#cookNext').focus();
 }
-function closeCook(){
-  $('#cook').classList.remove('open');
+function hideCook(){
+  const c = $('#cook');
+  c.classList.remove('open');
+  c.classList.add('closing');
+  setTimeout(()=>c.classList.remove('closing'), 250);
   releaseWake();
   stopTimer();
   if(!$('#sheet').classList.contains('open')) document.body.style.overflow='';
 }
+function closeCook(){
+  if(cookPushed){ cookPushed = false; history.back(); return; }
+  hideCook();
+}
 function drawCook(){
+  const cb = $('#cookBody'); cb.classList.remove('stepIn'); void cb.offsetWidth; cb.classList.add('stepIn');
   const r = current;
   const sel = servings[r.id], scale = sel/r.serve;
   $('#cookTitle').textContent = r.t;
@@ -2028,6 +2067,12 @@ document.querySelectorAll('.bottomnav button').forEach(b=>{
 // ================= SEARCH =================
 $('#searchInput').addEventListener('input', e=>{ state.q = e.target.value.trim(); render(); });
 
+// ================= BACK BUTTON =================
+window.addEventListener('popstate', ()=>{
+  if($('#cook').classList.contains('open')){ cookPushed = false; hideCook(); return; }
+  if($('#sheet').classList.contains('open')){ sheetPushed = false; hideSheet(); requestAnimationFrame(()=>window.scrollTo(0, savedScroll)); }
+});
+
 // ================= ESC =================
 document.addEventListener('keydown', e=>{
   if(e.key!=='Escape') return;
@@ -2041,4 +2086,4 @@ render();
 loadShared();
 </script>
 </body>
-</html>
+  </html>
