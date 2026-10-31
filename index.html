@@ -1620,7 +1620,7 @@ function drawSheet(){
   const sel = servings[r.id], scale = sel/r.serve;
   $('#sheetInner').innerHTML = `
     <button class="close" id="sheetClose" aria-label="סגירה">✕</button>
-    <img class="heroimg" src="${r.img||IMG[r.id]||''}" alt="${esc(r.t)}" onerror="this.style.display='none'">${r.ig?'<div class="hintline" style="margin-top:.2rem">🎨 תמונה שנוצרה אוטומטית (AI), להמחשה בלבד - לא תמונה אמיתית של המתכון</div>':''}
+    <img class="heroimg" src="${r.img||IMG[r.id]||''}" alt="${esc(r.t)}" onerror="this.style.display='none'">${(r.ig||(!r.shared&&!r.imported))?'<div class="hintline" style="margin-top:.2rem">🎨 תמונה שנוצרה אוטומטית (AI), להמחשה בלבד - לא תמונה אמיתית של המתכון</div>':''}
     <h1 id="sheetTitle">${esc(r.t)}</h1>
     <div class="meta"><span>📂 ${CATS[r.c]}</span><span>⏱ ${r.min} דקות</span>
       <button class="fav" style="position:static" data-fav="${r.id}" aria-pressed="${favs.has(r.id)}" aria-label="שמירה למועדפים">${favs.has(r.id)?'❤️':'🤍'}</button>
@@ -2086,4 +2086,4 @@ render();
 loadShared();
 </script>
 </body>
-  </html>
+</html>
